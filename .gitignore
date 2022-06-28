@@ -1,0 +1,11 @@
+__pycache__/
+ouput_files
+*.aux
+*.bbl
+*.out
+*.toc
+*.blg
+*.pdf
+
+
+
