@@ -1,5 +1,5 @@
 __pycache__/
-ouput_files
+/output_files
 *.aux
 *.bbl
 *.out
