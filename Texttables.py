@@ -105,14 +105,14 @@ class SetterControler:
     def cols_width_left(self, x: List[int]):
         """cols distance from the left\n
         ├──────────────────20┼─────────────────40┼───────────────────60┤\n"""
+        y = x[:]
         x.insert(0, 0)
-
         breite_real = [
-            ((x[i + 1] - x[i])) - (self._table_obj.distances[-1] + 1) // 2
-            for i in range(len(x) - 1)
+            ((y[i + 1] - y[i])) - (self._table_obj.distances[-1] + 1) // 2
+            for i in range(len(y) - 1)
         ]
         self._table_obj.cols_width = breite_real
-        self._table_obj.table_width = sum(breite_real) + len(x)
+        self._table_obj.table_width = sum(breite_real) + len(y)
 
     def align_header(self, x: List[str]):
         """align for evry cell\n
@@ -259,13 +259,13 @@ class OneParserControler:
         # self._create_string_base_header()
         self._create_v_cuts(("top", self._table_obj.verical_top))
         self._create_row_new(self._table_obj.header_column, header=True)  # header
-        self._create_v_cuts(
-            ("header", self._table_obj.vertical_header)
-        )  # header border
+        
         # table data
         for i, row in enumerate(self._table_obj.table):
             if i == 0:
-                pass
+                self._create_v_cuts(
+            ("header", self._table_obj.vertical_header)
+        )  # header border
             elif (
                 self._table_obj.speciall != None and (i % self._table_obj.speciall) == 0
             ):
