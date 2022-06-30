@@ -9,7 +9,6 @@ class AdderWrapper:
     """if text is the datatype added to the table, simulate the incomming objects"""
 
     text: str
-    token = "dummy"
 
 
 @dataclass
@@ -22,8 +21,16 @@ class OutgoingTextWrapperLines:
 
 
 @dataclass
+class TextWrapper:
+    text: str
+    token: str
+    cell_id: List[int] = field(default_factory=list)
+    input: Any = None
+
+
+@dataclass
 class DataTable:
-    header: TextWrapper = None
+    header: TextWrapper = field(default=None)
     header_column: List[str] = field(default_factory=list)
     table: List[List[str]] = field(default_factory=list)
     cols_width: list = field(default_factory=list)
@@ -83,14 +90,6 @@ class DataTable:
         return b, c, middle, left, right
 
 
-@dataclass
-class TextWrapper:
-    text: str
-    token: str
-    cell_id: List[int] = field(default_factory=list)
-    input: Any = None
-
-
 class SetterControler:
     def __init__(self, parent: DataTable) -> None:
         self._table_obj = parent
@@ -134,30 +133,30 @@ class SetterControler:
         ), "gleiche länge wie Spaltenanzahl eingeben!"
         self._table_obj.align_cols = x
 
-    def v_line(
-        self,
-        variant,
-        draw=True,
-        chars=None,
-    ):
-        """variant: top|header|normal|bottom|special\n
-        chars=["┌", "─", "┬", "─", "┐"]\n
-        special: draw:int -> all 'int' a speciel line is inserted
-        }"""
+    # def v_line(
+    #     self,
+    #     variant,
+    #     draw=True,
+    #     chars=None,
+    # ):
+    #     """variant: top|header|normal|bottom|special\n
+    #     chars=["┌", "─", "┬", "─", "┐"]\n
+    #     special: draw:int -> all 'int' a speciel line is inserted
+    #     }"""
 
-        varian_dict = {
-            "top": self._v_line_top,
-            "header": self._v_line_header,
-            "normal": self._v_line_normal,
-            "bottom": self._v_line_bottom,
-            "special": self._v_line_special,
-        }
+    #     varian_dict = {
+    #         "top": self._v_line_top,
+    #         "header": self._v_line_header,
+    #         "normal": self._v_line_normal,
+    #         "bottom": self._v_line_bottom,
+    #         "special": self._v_line_special,
+    #     }
 
-        if chars == None:
-            varian_dict[variant](draw)
-        else:
-            assert len(chars) == 5, "bitte 5 zeichen eingeben"
-            varian_dict[variant](draw, chars)
+    #     if chars == None:
+    #         varian_dict[variant](draw)
+    #     else:
+    #         assert len(chars) == 5, "bitte 5 zeichen eingeben"
+    #         varian_dict[variant](draw, chars)
 
     def distance_cell(self, left=1, right=1):
         """set the distance to the frame on the text in echt cell"""
@@ -168,23 +167,23 @@ class SetterControler:
     def distance_table(self, dis: int):
         self._table_obj.distance_table = dis
 
-    def _v_line_top(self, draw=True, chars=["┌", "─", "┬", "─", "┐"], *args):
+    def v_line_top(self, draw=True, chars=["┌", "─", "┬", "─", "┐"]):
         self._table_obj.chars[0] = chars
         self._table_obj.verical_top = draw
 
-    def _v_line_normal(self, draw=True, chars=["├", "─", "┼", "─", "┤"], *args):
+    def v_line_normal(self, draw=True, chars=["├", "─", "┼", "─", "┤"]):
         self._table_obj.chars[4] = chars
         self._table_obj.verical_normal = draw
 
-    def _v_line_bottom(self, draw=True, chars=["└", "─", "┴", "─", "┘"], *args):
+    def v_line_bottom(self, draw=True, chars=["└", "─", "┴", "─", "┘"]):
         self._table_obj.chars[5] = chars
         self._table_obj.verical_bottom = draw
 
-    def _v_line_header(self, draw=True, chars=["╞", "═", "╪", "═", "╡"], *args):
+    def v_line_header(self, draw=True, chars=["╞", "═", "╪", "═", "╡"]):
         self._table_obj.chars[2] = chars
         self._table_obj.vertical_header = draw
 
-    def _v_line_special(self, x: int, chars=["╞", "═", "╪", "═", "╡"], *args):
+    def v_line_special(self, x: int, chars=["╞", "═", "╪", "═", "╡"]):
         """all x rows one special v line"""
         assert isinstance(
             x, int
@@ -205,7 +204,10 @@ class AdderControler:
         if isinstance(any_data, str):
             self._table_obj.header = AdderWrapper(any_data)
         else:
-            self._table_obj.header = AdderWrapper(any_data)
+            assert hasattr(
+                any_data, "text"
+            ), "das eingehende objekt muss das attribut text haben auf dem sich der text der Celle befindet"
+            self._table_obj.header = any_data
 
     def header_column(self, data: List[Any]):
         assert len(data) == len(
@@ -216,6 +218,9 @@ class AdderControler:
             if isinstance(any_data, str):
                 lehr.append(AdderWrapper(any_data))
             else:
+                assert hasattr(
+                    any_data, "text"
+                ), "das eingehende objekt muss das attribut text haben auf dem sich der text der Celle befindet"
                 lehr.append(any_data)
         self._table_obj.header_column = lehr
 
@@ -229,6 +234,9 @@ class AdderControler:
             if isinstance(any_data, str):
                 lehr.append(AdderWrapper(any_data))
             else:
+                assert hasattr(
+                    any_data, "text"
+                ), "das eingehende objekt muss das attribut text haben auf dem sich der text der Celle befindet"
                 lehr.append(any_data)
         self._table_obj.table.append(lehr)
 
@@ -247,7 +255,7 @@ class OneParserControler:
         """ceate the first heder line\n wird falsch geparst"""
         if self._table_obj.header != None:
             self._add_text_obj(
-                self._table_obj.header.text,
+                " " + self._table_obj.header.text,
                 "text",
                 [self.__counter_table, -1, 0],
                 original=self._table_obj.header,
@@ -256,16 +264,16 @@ class OneParserControler:
 
     def _run(self):
         """vreate the table in form of the objects"""
-        # self._create_string_base_header()
+        self._create_string_base_header()
         self._create_v_cuts(("top", self._table_obj.verical_top))
         self._create_row_new(self._table_obj.header_column, header=True)  # header
-        
+
         # table data
         for i, row in enumerate(self._table_obj.table):
             if i == 0:
                 self._create_v_cuts(
-            ("header", self._table_obj.vertical_header)
-        )  # header border
+                    ("header", self._table_obj.vertical_header)
+                )  # header border
             elif (
                 self._table_obj.speciall != None and (i % self._table_obj.speciall) == 0
             ):
@@ -356,10 +364,10 @@ class OneParserControler:
         self._add_text_obj("\n", "endline", self._get_id())
         self.__counter_line += 1
 
-    def _check_string_cell_lenght(self, cell_width, str_len):
+    def _check_string_cell_lenght(self, cell_width: int, str_len: str):
         """überprüft ob der text in der zelle länger wie die vorgebene länge ist"""
         if (cell_width - self._table_obj.distances[2]) < len(str_len):
-            raise Exception("Eine String ist breiter als die Zelle!!!")
+            raise Exception(f"{str_len} ist breiter als die Zelle!!!")
 
     def _row_to_lines_new(
         self, row: List[AdderWrapper]
@@ -422,21 +430,36 @@ class MultiParserControler:
                     TextWrapper(text="", token="modificated", cell_id=_id)
                 )
 
+    def _get_header_length(self, tables_objcts: List[DataTable]):
+        lenght_header = []
+        for table in tables_objcts:
+            try:
+                lenght_header.append(len(table.header.text))
+            except AttributeError:
+                lenght_header.append(0)
+        return lenght_header
+
     def _create_left(self):
         """"""
         anzahl_tabellen = len(self._tables)
         self._modificate_table()
         sort_left_obj = sorted(self._create_normal(), key=lambda x: x.cell_id[1])
-        lenght = [
-            x.table_width + len(self.__distance) for x in self.tables_objcts
-        ]  # länge der einzelnen tabellen
+        # länge der einzelnen tabellen zeilen
+
+        lenght_header = self._get_header_length(self.tables_objcts)
+        lenght = [x.table_width + len(self.__distance) for x in self.tables_objcts]
 
         for obj in sort_left_obj:
             if obj.token == "endline":
                 # wenn ich ein enline erreicht habe zeilenumbruch durch abstand ersettzen
                 # außer ich bin in der letzten tabelle
+
                 if not obj.cell_id[0] + 1 == anzahl_tabellen:
                     obj.text = self.__distance
+                    if obj.cell_id[1] == -1:
+                        obj.text = " " * (
+                            lenght[obj.cell_id[0]] - 1 - lenght_header[obj.cell_id[0]]
+                        )
 
             elif obj.token == "modificated":
                 # das soll eine komplette lehrzeile werden, modifikatet sind dummy objekte die an die tabellen dran gehäng wurden
@@ -459,15 +482,16 @@ class Texttables:
     def __init__(self, side_mode) -> None:
         self.__side_mode = side_mode
         self.__table_counter = 0
-        # self._tables: List[List[TextWrapper]] = []
         self._tables: List[DataTable] = []
         self._init()
         self.finisched = None
 
     def _init(self):
         self._table_obj = DataTable()
+
         self.set = SetterControler(self._table_obj)
         self.add = AdderControler(self._table_obj)
+        self.add.header("")
 
     def end(self):
         """add the Table, and reset the old settings"""
@@ -506,20 +530,21 @@ class Texttables:
 if __name__ == "__main__":
     # --------easy way------------------
     t = Texttables(side_mode=True)
-    t.add.header("hehey")
+
     t.set.cols_width([20, 20, 20])
     t.set.align_cols(["r"] * 3)
     t.set.align_header(["r"] * 3)
     t.add.header_column(["one\none", "second\nsecond", ""])
-    t.set.v_line("special", 5)
+    t.set.v_line_special(5)
     for i in range(10):
         t.add.row(["fgtZZZZff", "ggg", "hhh"])
     t.end()
+    # t.add.header("hehey")
+    # t.add.header("hehey")
     t.set.cols_width([20, 20, 20] * 2)
     t.set.align_cols(["r"] * 3 * 2)
     t.set.align_header(["r"] * 3 * 2)
     t.add.header_column(["one\none", "second\nsecond", ""] * 2)
-    t.set.v_line("special", 5)
     for i in range(14):
         t.add.row(["fgtZZZZff", "ggg", "hhh"] * 2)
     t.end()
