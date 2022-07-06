@@ -133,36 +133,11 @@ class SetterControler:
         ), "gleiche länge wie Spaltenanzahl eingeben!"
         self._table_obj.align_cols = x
 
-    # def v_line(
-    #     self,
-    #     variant,
-    #     draw=True,
-    #     chars=None,
-    # ):
-    #     """variant: top|header|normal|bottom|special\n
-    #     chars=["┌", "─", "┬", "─", "┐"]\n
-    #     special: draw:int -> all 'int' a speciel line is inserted
-    #     }"""
-
-    #     varian_dict = {
-    #         "top": self._v_line_top,
-    #         "header": self._v_line_header,
-    #         "normal": self._v_line_normal,
-    #         "bottom": self._v_line_bottom,
-    #         "special": self._v_line_special,
-    #     }
-
-    #     if chars == None:
-    #         varian_dict[variant](draw)
-    #     else:
-    #         assert len(chars) == 5, "bitte 5 zeichen eingeben"
-    #         varian_dict[variant](draw, chars)
+ 
 
     def distance_cell(self, left=1, right=1):
         """set the distance to the frame on the text in echt cell"""
-        self._table_obj.distances.append(left)
-        self._table_obj.distances.append(right)
-        self._table_obj.distances.append(left + right)
+        self._table_obj.distances = [left,right,left+right]
 
     def distance_table(self, dis: int):
         self._table_obj.distance_table = dis
@@ -171,7 +146,7 @@ class SetterControler:
         self._table_obj.chars[0] = chars
         self._table_obj.verical_top = draw
 
-    def v_line_normal(self, draw=True, chars=["├", "─", "┼", "─", "┤"]):
+    def v_line_normal(self, draw=False, chars=["├", "─", "┼", "─", "┤"]):
         self._table_obj.chars[4] = chars
         self._table_obj.verical_normal = draw
 
@@ -192,6 +167,45 @@ class SetterControler:
         self._table_obj.speciall = x
         self._table_obj.vertical_special = True
 
+    def chars(self,chars:List[List[str]] = [
+        ["┌", "─", "┬", "─", "┐"],
+        ["│", " ", "│", " ", "│"],
+        ["╞", "═", "╪", "═", "╡"],
+        ["│", " ", "│", " ", "│"],
+        ["├", "─", "┼", "─", "┤"],
+        ["└", "─", "┴", "─", "┘"],
+        ["╞", "═", "╪", "═", "╡"],
+    ]) :
+        """ 
+        [oben]                        0\n
+        [links rechts border header]  1\n
+        [vlineheader]                 2\n
+        [links rechts border normal]  3\n
+        [vline normal]                4\n
+        [unten]                       5\n
+        [special]                     6\n"""
+        if chars == 2:
+            chars = [
+        ["┌", "─", "┬", "─", "┐"],
+        ["│", " ", "│", " ", "│"],
+        ["╞", "═", "╪", "═", "╡"],
+        ["│", " ", "│", " ", "│"],
+        ["├", "─", "┼", "─", "┤"],
+        ["└", "─", "┴", "─", "┘"],
+        ["╞", "═", "╪", "═", "╡"],
+    ]   
+        elif chars == 1:
+            chars = [
+        ["┌", "─", "┬", "─", "┐"],
+        ["│", " ", "│", " ", "│"],
+        ["├", "─", "┼", "─", "┤"],
+        ["│", " ", "│", " ", "│"],
+        ["├", "─", "┼", "─", "┤"],
+        ["└", "─", "┴", "─", "┘"],
+        ["╞", "═", "╪", "═", "╡"],
+    ]
+        else:
+            self._table_obj.chars = chars #= 
 
 class AdderControler:
     """add data to the table"""
