@@ -133,11 +133,9 @@ class SetterControler:
         ), "gleiche länge wie Spaltenanzahl eingeben!"
         self._table_obj.align_cols = x
 
- 
-
     def distance_cell(self, left=1, right=1):
         """set the distance to the frame on the text in echt cell"""
-        self._table_obj.distances = [left,right,left+right]
+        self._table_obj.distances = [left, right, left + right]
 
     def distance_table(self, dis: int):
         self._table_obj.distance_table = dis
@@ -167,16 +165,19 @@ class SetterControler:
         self._table_obj.speciall = x
         self._table_obj.vertical_special = True
 
-    def chars(self,chars:List[List[str]] = [
-        ["┌", "─", "┬", "─", "┐"],
-        ["│", " ", "│", " ", "│"],
-        ["╞", "═", "╪", "═", "╡"],
-        ["│", " ", "│", " ", "│"],
-        ["├", "─", "┼", "─", "┤"],
-        ["└", "─", "┴", "─", "┘"],
-        ["╞", "═", "╪", "═", "╡"],
-    ]) :
-        """ 
+    def chars(
+        self,
+        chars: List[List[str]] = [
+            ["┌", "─", "┬", "─", "┐"],
+            ["│", " ", "│", " ", "│"],
+            ["╞", "═", "╪", "═", "╡"],
+            ["│", " ", "│", " ", "│"],
+            ["├", "─", "┼", "─", "┤"],
+            ["└", "─", "┴", "─", "┘"],
+            ["╞", "═", "╪", "═", "╡"],
+        ],
+    ):
+        """
         [oben]                        0\n
         [links rechts border header]  1\n
         [vlineheader]                 2\n
@@ -186,26 +187,27 @@ class SetterControler:
         [special]                     6\n"""
         if chars == 2:
             chars = [
-        ["┌", "─", "┬", "─", "┐"],
-        ["│", " ", "│", " ", "│"],
-        ["╞", "═", "╪", "═", "╡"],
-        ["│", " ", "│", " ", "│"],
-        ["├", "─", "┼", "─", "┤"],
-        ["└", "─", "┴", "─", "┘"],
-        ["╞", "═", "╪", "═", "╡"],
-    ]   
+                ["┌", "─", "┬", "─", "┐"],
+                ["│", " ", "│", " ", "│"],
+                ["╞", "═", "╪", "═", "╡"],
+                ["│", " ", "│", " ", "│"],
+                ["├", "─", "┼", "─", "┤"],
+                ["└", "─", "┴", "─", "┘"],
+                ["╞", "═", "╪", "═", "╡"],
+            ]
         elif chars == 1:
             chars = [
-        ["┌", "─", "┬", "─", "┐"],
-        ["│", " ", "│", " ", "│"],
-        ["├", "─", "┼", "─", "┤"],
-        ["│", " ", "│", " ", "│"],
-        ["├", "─", "┼", "─", "┤"],
-        ["└", "─", "┴", "─", "┘"],
-        ["╞", "═", "╪", "═", "╡"],
-    ]
+                ["┌", "─", "┬", "─", "┐"],
+                ["│", " ", "│", " ", "│"],
+                ["├", "─", "┼", "─", "┤"],
+                ["│", " ", "│", " ", "│"],
+                ["├", "─", "┼", "─", "┤"],
+                ["└", "─", "┴", "─", "┘"],
+                ["╞", "═", "╪", "═", "╡"],
+            ]
         else:
-            self._table_obj.chars = chars #= 
+            self._table_obj.chars = chars  # =
+
 
 class AdderControler:
     """add data to the table"""
@@ -493,6 +495,8 @@ class MultiParserControler:
 
 
 class Texttables:
+    """the attribute text is parset to a string\n"""
+
     def __init__(self, side_mode) -> None:
         self.__side_mode = side_mode
         self.__table_counter = 0

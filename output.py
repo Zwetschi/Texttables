@@ -9,22 +9,19 @@ import random
 # str(obj.text, encoding="ascii", errors="ignore")
 class Write:
     def __init__(self, filename=None) -> None:
-        timestamp = time.localtime()
-        self.__timestamp = time.strftime("%Y_%m_%d__%H_%M_%S", timestamp)
+        self.__timestamp = time.strftime("%Y_%m_%d__%H_%M_%S", time.localtime())
 
         if filename == None:
             r = random.randint(100, 999)
             self.__filename = self.__timestamp + "__" + str(r) + ".txt"
-
         else:
             self.__filename = filename
 
-        folder = os.path.join("output_files",'egal')
+        folder = os.path.join("output_files", "egal")
         try:
             os.makedirs(folder)
         except FileExistsError:
             pass
-            
 
         self.__path = os.path.join(
             os.path.dirname(__file__) + "\output_files", self.__filename
