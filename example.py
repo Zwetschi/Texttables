@@ -2,7 +2,7 @@ import Texttables
 import tkinter
 
 
-def exampe_1():
+def example_1():
     t1 = Texttables.Texttables(side_mode=False)
     t1.add.header("hehey")
     t1.set.cols_width([20, 20, 20])
@@ -63,7 +63,7 @@ def example_3():
     root = tkinter.Tk()
     scollbar = tkinter.Scrollbar(root, orient="horizontal")
     textwidget = tkinter.Text(root, xscrollcommand=scollbar.set, wrap="none")
-    textwidget.config(width=60, height=40)
+    textwidget.config(width=200, height=40)
     scollbar.config(command=textwidget.xview)
     textwidget.grid(sticky="nswe")
     scollbar.grid(sticky="nesw")
@@ -110,4 +110,18 @@ def example_3():
     root.mainloop()
 
 
-example_3()
+def example_4():
+    t4 = Texttables.Texttables(side_mode=False)
+    t4.add.header("heheyfrt")
+    t4.set.cols_width([10, 15, 5] * 2)
+    t4.set.align_cols(["r"] * 3 * 2)
+    t4.set.align_header(["r"] * 3 * 2)
+    t4.set.v_line_normal(False)
+    t4.add.header_column(["one\none", "second", ""] * 2)
+    for i in range(5):
+        t4.add.row(["fgZZff", "ggg", "hhh"] * 2)
+    t4.end()
+    print(t4.get_str())
+
+
+example_4()

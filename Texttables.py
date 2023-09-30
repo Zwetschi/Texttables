@@ -1,80 +1,84 @@
 from __future__ import annotations
-from typing import List, Any
-from dataclasses import dataclass, field
+
+# from typing import List, Any
+# from dataclasses import dataclass, field
+# from typing
 import output
 
 
-@dataclass
 class AdderWrapper:
     """if text is the datatype added to the table, simulate the incomming objects"""
 
-    text: str
+    def __init__(self, text) -> None:
+        self.text: str = text
 
 
-@dataclass
 class OutgoingTextWrapperLines:
     """class for not loose the information of the incoming objet.\n
-    the probem is that i split the string on newlines. so i have to combine each split to each of his own objekts to dount loose information"""
+    the probem is that i split the string on newlines.
+    so i have to combine each split to each of his own objekts to dount loose information
+    """
 
-    incomming_obj: Any | AdderWrapper
-    text: str
+    def __init__(self, incomming_obj: AdderWrapper, text: str) -> None:
+        self.incomming_obj = incomming_obj
+        self.text = text
 
 
-@dataclass
 class TextWrapper:
-    text: str
-    token: str
-    cell_id: List[int] = field(default_factory=list)
-    input: Any = None
+    def __init__(self, text: str, token: str, cell_id: list[int], input=None) -> None:
+        self.text: str = text
+        self.token: str = token
+        self.cell_id: list[int] = cell_id
+        self.input = input
 
 
-@dataclass
 class DataTable:
-    header: TextWrapper = field(default=None)
-    header_column: List[str] = field(default_factory=list)
-    table: List[List[str]] = field(default_factory=list)
-    cols_width: list = field(default_factory=list)
-    align_cols: List = field(default_factory=list)
-    align_header: list = field(default_factory=list)
-    distances: list = field(default_factory=list)
-    distance_table: int = field(default=20)
-    table_width: int = field(default=None)
+    def __init__(self):
+        self.header: TextWrapper = None
+        self.header_column: list[str] = []
+        self.table: list[list[str]] = []
+        self.cols_width: list = []
+        self.align_cols: list = []
+        self.align_header: list = []
+        self.distances: list = []
+        self.distance_table: int = 20
+        self.table_width: int = None
 
-    vertical_table = True
-    vertical_header = True
-    verical_top = True
-    verical_bottom = True
-    vertical_special = False
-    verical_normal = True
-    speciall = None
+        self.vertical_table = True
+        self.vertical_header = True
+        self.verical_top = True
+        self.verical_bottom = True
+        self.vertical_special = False
+        self.verical_normal = True
+        self.speciall = None
 
-    results: List[TextWrapper] = field(default_factory=list)
-    # rahmen
-    # [oben]                        0
-    # [links rechts border header]  1
-    # [vlineheader]                 2
-    # [links rechts border normal]  3
-    # [vline normal]                4
-    # [unten]                       5
-    # [besonders]                   6
-    # chars = [
-    #     ["┌", "―", "┬", "―", "┐"],
-    #     ["│", " ", "│", " ", "│"],
-    #     ["╠", "═", "╪", "═", "╣"],
-    #     ["│", " ", "│", " ", "│"],
-    #     ["├", "―", "┼", "―", "┤"],
-    #     ["└", "―", "┴", "―", "┘"],
-    #     ["╠", "═", "╪", "═", "╣"],
-    # ]
-    chars = [
-        ["┌", "─", "┬", "─", "┐"],
-        ["│", " ", "│", " ", "│"],
-        ["╞", "═", "╪", "═", "╡"],
-        ["│", " ", "│", " ", "│"],
-        ["├", "─", "┼", "─", "┤"],
-        ["└", "─", "┴", "─", "┘"],
-        ["╞", "═", "╪", "═", "╡"],
-    ]
+        self.results: list[TextWrapper] = []
+        # rahmen
+        # [oben]                        0
+        # [links rechts border header]  1
+        # [vlineheader]                 2
+        # [links rechts border normal]  3
+        # [vline normal]                4
+        # [unten]                       5
+        # [besonders]                   6
+        # chars = [
+        #     ["┌", "―", "┬", "―", "┐"],
+        #     ["│", " ", "│", " ", "│"],
+        #     ["╠", "═", "╪", "═", "╣"],
+        #     ["│", " ", "│", " ", "│"],
+        #     ["├", "―", "┼", "―", "┤"],
+        #     ["└", "―", "┴", "―", "┘"],
+        #     ["╠", "═", "╪", "═", "╣"],
+        # ]
+        self.chars = [
+            ["┌", "─", "┬", "─", "┐"],
+            ["│", " ", "│", " ", "│"],
+            ["╞", "═", "╪", "═", "╡"],
+            ["│", " ", "│", " ", "│"],
+            ["├", "─", "┼", "─", "┤"],
+            ["└", "─", "┴", "─", "┘"],
+            ["╞", "═", "╪", "═", "╡"],
+        ]
 
     def joose_chars(self, header=False):
         """returns the chars for the row lines, v-lines another method"""
@@ -95,13 +99,13 @@ class SetterControler:
         self._table_obj = parent
         self.distance_cell()
 
-    def cols_width(self, x: List[int]):
+    def cols_width(self, x: list[int]):
         """cols widht\n
         ├────────20──────────┼─────────20────────┼──────────20─────────┤\n"""
         self._table_obj.cols_width = x
         self._table_obj.table_width = sum(x) + len(x) + 1
 
-    def cols_width_left(self, x: List[int]):
+    def cols_width_left(self, x: list[int]):
         """cols distance from the left\n
         ├──────────────────20┼─────────────────40┼───────────────────60┤\n"""
         y = x[:]
@@ -113,7 +117,7 @@ class SetterControler:
         self._table_obj.cols_width = breite_real
         self._table_obj.table_width = sum(breite_real) + len(y)
 
-    def align_header(self, x: List[str]):
+    def align_header(self, x: list[str]):
         """align for evry cell\n
         l: left\n
         r:right\n
@@ -123,7 +127,7 @@ class SetterControler:
         ), "gleiche länge wie Spaltenanzahl eingeben!"
         self._table_obj.align_header = x
 
-    def align_cols(self, x: List[str]):
+    def align_cols(self, x: list[str]):
         """align for evry cell\n
         l: left\n
         r:right\n
@@ -165,27 +169,17 @@ class SetterControler:
         self._table_obj.speciall = x
         self._table_obj.vertical_special = True
 
-    def chars(
-        self,
-        chars: List[List[str]] = [
-            ["┌", "─", "┬", "─", "┐"],
-            ["│", " ", "│", " ", "│"],
-            ["╞", "═", "╪", "═", "╡"],
-            ["│", " ", "│", " ", "│"],
-            ["├", "─", "┼", "─", "┤"],
-            ["└", "─", "┴", "─", "┘"],
-            ["╞", "═", "╪", "═", "╡"],
-        ],
-    ):
-        """
-        [oben]                        0\n
-        [links rechts border header]  1\n
-        [vlineheader]                 2\n
-        [links rechts border normal]  3\n
-        [vline normal]                4\n
-        [unten]                       5\n
-        [special]                     6\n"""
-        if chars == 2:
+    def table_border(self, standart=3):
+        """obsolet replacet through v_line_header and so on"""
+        # [vertical_line_top]
+        # [frame_boarder_header]
+        # [vertical_line_header]
+        # [frame_boarder_normal]
+        # [vertical_line_normal]
+        # [vertical_line_bottom]
+        # [vertical_line_special]
+
+        if standart == 1:
             chars = [
                 ["┌", "─", "┬", "─", "┐"],
                 ["│", " ", "│", " ", "│"],
@@ -195,7 +189,7 @@ class SetterControler:
                 ["└", "─", "┴", "─", "┘"],
                 ["╞", "═", "╪", "═", "╡"],
             ]
-        elif chars == 1:
+        elif standart == 2:
             chars = [
                 ["┌", "─", "┬", "─", "┐"],
                 ["│", " ", "│", " ", "│"],
@@ -205,7 +199,16 @@ class SetterControler:
                 ["└", "─", "┴", "─", "┘"],
                 ["╞", "═", "╪", "═", "╡"],
             ]
-        else:
+        elif standart == 3:
+            chars = [
+                ["┌", "─", "┬", "─", "┐"],
+                ["│", " ", "│", " ", "│"],
+                ["╞", "═", "╪", "═", "╡"],
+                ["│", " ", "│", " ", "│"],
+                ["├", "─", "┼", "─", "┤"],
+                ["└", "─", "┴", "─", "┘"],
+                ["╞", "═", "╪", "═", "╡"],
+            ]
             self._table_obj.chars = chars  # =
 
 
@@ -225,7 +228,7 @@ class AdderControler:
             ), "das eingehende objekt muss das attribut text haben auf dem sich der text der Celle befindet"
             self._table_obj.header = any_data
 
-    def header_column(self, data: List[Any]):
+    def header_column(self, data: list):
         assert len(data) == len(
             self._table_obj.cols_width
         ), "Vorgabe anzahl colums stimmt nicht mit gegebenen überein"
@@ -240,7 +243,7 @@ class AdderControler:
                 lehr.append(any_data)
         self._table_obj.header_column = lehr
 
-    def row(self, data: List[Any]):
+    def row(self, data: list):
         """add a row to the table"""
         assert len(data) == len(
             self._table_obj.cols_width
@@ -282,14 +285,12 @@ class OneParserControler:
         """vreate the table in form of the objects"""
         self._create_string_base_header()
         self._create_v_cuts(("top", self._table_obj.verical_top))
-        self._create_row_new(self._table_obj.header_column, header=True)  # header
+        self._create_row_new(self._table_obj.header_column, header=True)
 
         # table data
         for i, row in enumerate(self._table_obj.table):
             if i == 0:
-                self._create_v_cuts(
-                    ("header", self._table_obj.vertical_header)
-                )  # header border
+                self._create_v_cuts(("header", self._table_obj.vertical_header))
             elif (
                 self._table_obj.speciall != None and (i % self._table_obj.speciall) == 0
             ):
@@ -297,15 +298,15 @@ class OneParserControler:
             else:
                 self._create_v_cuts(("normal", self._table_obj.verical_normal))
             self._create_row_new(row)
-        self._create_v_cuts(("bottom", self._table_obj.verical_bottom))  # bottom
+        self._create_v_cuts(("bottom", self._table_obj.verical_bottom))
 
-    def _create_row_new(self, row: List[str], header=False):
+    def _create_row_new(self, row: list[str], header=False):
         """create one complete row with all lines"""
         lines = self._row_to_lines_new(row)
         for line in lines:
             self._create_line_new(line, header)
 
-    def _create_line_new(self, line: List[OutgoingTextWrapperLines], header: bool):
+    def _create_line_new(self, line: list[OutgoingTextWrapperLines], header: bool):
         """create on line, one row can be more then one line"""
         cols_width, align_cols, middle, left, right = self._table_obj.joose_chars(
             header
@@ -317,9 +318,8 @@ class OneParserControler:
                 cols_width - len(cell_str.text) - self._table_obj.distances[2]
             )
             self._reate_cell_line_new(cell_str, space, cols_align, middle)
-        self._remove_text_obj(
-            -1
-        )  # remove the right feame, TODO can do bugs if no frame is ausgewählt
+        # remove the right feame, TODO can do bugs if no frame is ausgewählt
+        self._remove_text_obj(-1)
         self._add_text_obj(right, "frame", self._get_id())
         self._add_text_obj("\n", "endline", self._get_id())
         self.__counter_line += 1
@@ -386,8 +386,8 @@ class OneParserControler:
             raise Exception(f"{str_len} ist breiter als die Zelle!!!")
 
     def _row_to_lines_new(
-        self, row: List[AdderWrapper]
-    ) -> List[List[OutgoingTextWrapperLines]]:
+        self, row: list[AdderWrapper]
+    ) -> list[list[OutgoingTextWrapperLines]]:
         cell = []
         line = []
         count = []
@@ -404,7 +404,7 @@ class OneParserControler:
             cell = []
         return zip(*line)
 
-    def _add_text_obj(self, text: str, token: str, cell_id: List[int], original=None):
+    def _add_text_obj(self, text: str, token: str, cell_id: list[int], original=None):
         self._table_obj.results.append(TextWrapper(text, token, cell_id, original))
 
     def _remove_text_obj(self, position):
@@ -415,13 +415,13 @@ class OneParserControler:
 
 
 class MultiParserControler:
-    def __init__(self, tables: List[DataTable], side_mode, distcande=" " * 10) -> None:
+    def __init__(self, tables: list[DataTable], side_mode, distcande=" " * 10) -> None:
         self.tables_objcts = tables
         self._tables = [data_table.results for data_table in tables]
         self.__side_mode = side_mode
         self.__distance = distcande
 
-    def run(self) -> List[TextWrapper]:
+    def run(self) -> list[TextWrapper]:
         if self.__side_mode:
             return self._create_left()
         else:
@@ -430,7 +430,7 @@ class MultiParserControler:
     def _modificate_table(self):
         """füllt die zeilen mitlehrzilen auf damit alle tableen lgeich lang sind"""
         # fmt: off
-        last_ids: List[List[int]] = [table[-1].cell_id for table in self._tables]
+        last_ids: list[list[int]] = [table[-1].cell_id for table in self._tables]
         max_lines = sorted(self._create_normal(), key=lambda x: x.cell_id[1])[-1].cell_id[1]
         lines_to_add = [max_lines - x[1] for x in last_ids]
         # fmt: on
@@ -446,7 +446,7 @@ class MultiParserControler:
                     TextWrapper(text="", token="modificated", cell_id=_id)
                 )
 
-    def _get_header_length(self, tables_objcts: List[DataTable]):
+    def _get_header_length(self, tables_objcts: list[DataTable]):
         lenght_header = []
         for table in tables_objcts:
             try:
@@ -485,7 +485,7 @@ class MultiParserControler:
                     obj.text = "\n"
         return sort_left_obj
 
-    def _create_normal(self) -> List[TextWrapper]:
+    def _create_normal(self) -> list[TextWrapper]:
         """returns the list with tables in one list"""
         result = []
         for table in self._tables:
@@ -500,7 +500,7 @@ class Texttables:
     def __init__(self, side_mode) -> None:
         self.__side_mode = side_mode
         self.__table_counter = 0
-        self._tables: List[DataTable] = []
+        self._tables: list[DataTable] = []
         self._init()
         self.finisched = None
 
@@ -530,7 +530,7 @@ class Texttables:
             ret += obj.text
         return ret
 
-    def get_obj(self) -> List[TextWrapper]:
+    def get_obj(self) -> list[TextWrapper]:
         """returns a stream with textWrappers\n
         if your cells are objekts your input objet is return on TextWapper on the attribut input\n
         the text and the frame of the table is on the atribute text"""
@@ -547,18 +547,17 @@ class Texttables:
 
 if __name__ == "__main__":
     # --------easy way------------------
-    t = Texttables(side_mode=True)
+    t = Texttables(side_mode=False)
 
     t.set.cols_width([20, 20, 20])
+    t.set.table_border()
     t.set.align_cols(["r"] * 3)
-    t.set.align_header(["r"] * 3)
+    t.set.align_header(["l"] * 3)
     t.add.header_column(["one\none", "second\nsecond", ""])
     t.set.v_line_special(5)
     for i in range(10):
         t.add.row(["fgtZZZZff", "ggg", "hhh"])
     t.end()
-    # t.add.header("hehey")
-    # t.add.header("hehey")
     t.set.cols_width([20, 20, 20] * 2)
     t.set.align_cols(["r"] * 3 * 2)
     t.set.align_header(["r"] * 3 * 2)
@@ -566,5 +565,4 @@ if __name__ == "__main__":
     for i in range(14):
         t.add.row(["fgtZZZZff", "ggg", "hhh"] * 2)
     t.end()
-    t.file()
-    # ---------------to gui----------------------
+    print(t.get_str())
