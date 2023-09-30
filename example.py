@@ -59,24 +59,30 @@ def example_2():
     root.mainloop()
 
 
-def example_3():
-    root = tkinter.Tk()
-    scollbar = tkinter.Scrollbar(root, orient="horizontal")
-    textwidget = tkinter.Text(root, xscrollcommand=scollbar.set, wrap="none")
-    textwidget.config(width=200, height=40)
-    scollbar.config(command=textwidget.xview)
-    textwidget.grid(sticky="nswe")
-    scollbar.grid(sticky="nesw")
-    textwidget.tag_config("black", foreground="black")
-    textwidget.tag_config("blue", foreground="blue")
-    textwidget.tag_config("red", foreground="red")
-
+class Example:
     class Example2:
         def __init__(self, text, color) -> None:
             self.text = text
             self.color = color
 
-    def table_3():
+    def __init__(self) -> None:
+        self.root = tkinter.Tk()
+        scollbar = tkinter.Scrollbar(self.root, orient="horizontal")
+        self.textwidget = tkinter.Text(
+            self.root, xscrollcommand=scollbar.set, wrap="none"
+        )
+        self.textwidget.config(width=200, height=40)
+        scollbar.config(command=self.textwidget.xview)
+        self.textwidget.grid(sticky="nswe")
+        scollbar.grid(sticky="nesw")
+        self.textwidget.tag_config("black", foreground="black")
+        self.textwidget.tag_config("blue", foreground="blue")
+        self.textwidget.tag_config("red", foreground="red")
+
+        tkinter.Button(self.root, text="CreateTexttale", command=self.table_3).grid()
+        self.root.mainloop()
+
+    def table_3(self):
         t2 = Texttables.Texttables(side_mode=True)
         t2.add.header("hehey")
         t2.set.cols_width([20, 20, 20])
@@ -85,7 +91,7 @@ def example_3():
         t2.add.header_column(["one\none", "second\nsecond", ""])
         t2.set.v_line_special(5)
         for i in range(10):
-            t2.add.row([Example2("fgtZZZZff", "red"), "ggg", "hhh"])
+            t2.add.row([self.Example2("fgtZZZZff", "red"), "ggg", "hhh"])
         t2.end()
         t2.add.header("hehey")
         t2.set.cols_width([20, 20, 20])
@@ -94,20 +100,17 @@ def example_3():
         t2.add.header_column(["one\none", "second\nsecond", ""])
         t2.set.v_line_special(5)
         for i in range(10):
-            t2.add.row([Example2("fgtZZZZff", "red"), "ggg", "hhh"])
+            t2.add.row([self.Example2("fgtZZZZff", "red"), "ggg", "hhh"])
         t2.end()
         result = t2.get_obj()
         for obj in result:
             if obj.token == "frame":
-                textwidget.insert("end", obj.text, "blue")
+                self.textwidget.insert("end", obj.text, "blue")
             else:
                 try:
-                    textwidget.insert("end", obj.text, obj.input.color)
+                    self.textwidget.insert("end", obj.text, obj.input.color)
                 except AttributeError:
-                    textwidget.insert("end", obj.text, "green")
-
-    tkinter.Button(root, text="CreateTexttale", command=table_3).grid()
-    root.mainloop()
+                    self.textwidget.insert("end", obj.text, "green")
 
 
 def example_4():
@@ -124,4 +127,4 @@ def example_4():
     print(t4.get_str())
 
 
-example_4()
+Example()
