@@ -135,13 +135,19 @@ class Charsets:
 
     def get_charset(self, charset_name: str) -> Charset:
         """try to return a instance of Charset by name"""
+        if charset_name not in self.__dict__.keys():
+            raise KeyError(f"{charset_name} is not in {self.__dict__.keys()}")
         return self.__getattribute__(charset_name)
 
-    def set(self, charset_name: str, frame: str, data: CharsetTuple):
+    def set(self, charset_name: str, frame: str, chars, draw):
         if charset_name not in self.__dict__.keys():
             self.__setattr__(charset_name, Charset())
+        # if chars is None:
+        # # look if chars was set  # TODO
+        # actual_chars = self.get_charset(charset_name).get_att_by_name(frame).charset
+        # if actual_chars is None
 
-        self.get_charset(charset_name).set(frame, data)
+        self.get_charset(charset_name).set(frame, CharsetTuple(chars, draw))
 
     def check_charset(self, charset_name: str):
         """check if there are set all attributes in a charset
@@ -163,8 +169,9 @@ class RowParser:
         self._charsets = Charsets()
         self._row: list[CellWrapper] = []
         self.__line_stack_sizes = []
+        self._result_row: list[OutputPart] = []
         self.set_distance_in_cell()
-        self.set_charset_active()
+        self.set_charset_active("standart_1")
 
     def set_cell_width(self, cells_width: list[int]):
         """cols widht\n
@@ -220,7 +227,7 @@ class RowParser:
         self._cells_allign = cells_allign
 
     def get_special_horizontal_line(self) -> list[OutputPart]:
-        chars = self._charsets.get_charset(self._actual_used_charset).frame_special
+        chars = self._charsets.get_charset(self._active_charset).frame_special
         if chars.draw:
             return self.__parse_horizontal_line_without_text(chars.charset)
         else:
@@ -228,9 +235,9 @@ class RowParser:
 
     def clear_row(self):
         self._row = []
+        self.__line_stack_sizes = []
 
     def add_row(self, row: list[str]):
-        self.clear_row()
         for cell in row:
             self.add_cell(cell)
 
@@ -248,8 +255,7 @@ class RowParser:
         """
         if row is not None:
             self.add_row(row)
-        result = self._parse_row()
-        return result
+        return self._result_row
 
     def add_cell(self, cell_text: str, **kwargs):
         """add a cell to row (dount forget do call clear_row when finished)
@@ -258,12 +264,13 @@ class RowParser:
         this attributes is on kwargs["your_attrubure"] on the output objects
         (not every output wrapper has this attribut!)
         """
-        cell = CellWrapper(cell_text, **kwargs)
-        self.__line_stack_sizes.append(cell.get_line_amount())
-        if len(self._row) >= self._max_cell_amount():
-            self.__check_cell_amount()
+        cell_wrapper = CellWrapper(cell_text, **kwargs)
+        self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
+        self._row.append(cell_wrapper)
 
-        self._row.append(cell)
+    def run(self):
+        self._parse_row()
+        self.clear_row()
 
     def set_frame_vertical_line_top(
         self, draw: bool = True, charset: str = None, chars: list[str] = None
@@ -293,7 +300,7 @@ class RowParser:
             ValueError: _description_
         """
         self._charsets.check_charset(charset)
-        self._actual_used_charset = charset
+        self._active_charset = charset
 
     def set_distance_in_cell(self, left=1, right=1):
         """set the distance to the frame on the text in echt cell"""
@@ -312,7 +319,6 @@ class RowParser:
         for distance in distances:
             self._cells_width.append(distance - reminder)
             reminder = distance
-        print(self._cells_width)
 
     def _set_frame_vertical_line(
         self, draw: bool, charset: str, chars: list[str], frame: str
@@ -325,28 +331,30 @@ class RowParser:
             self.__check_chars_len(chars, 3, "border")
         else:
             self.__check_chars_len(chars, 4, "line")
-        if charset is not None:
-            self._charsets.set(charset, prefix + frame, CharsetTuple(chars, draw))
-            self.set_charset_active(charset)
+        if charset is None:
+            charset = self._active_charset
+
+        self._charsets.set(charset, prefix + frame, chars, draw)
+        self.set_charset_active(charset)
 
     def _max_cell_amount(self) -> int:
         # return len(self._cells_allign)
         return len(self._cells_width)
 
     def _get_vertical_line_top(self) -> list[OutputPart]:
-        chars = self._charsets.get_charset(self._actual_used_charset).frame_top
+        chars = self._charsets.get_charset(self._active_charset).frame_top
         if chars.draw:
             return self.__parse_horizontal_line_without_text(chars.charset)
         return []
 
     def _get_vertical_line_bottom(self) -> list[OutputPart]:
-        chars = self._charsets.get_charset(self._actual_used_charset).frame_bottom
+        chars = self._charsets.get_charset(self._active_charset).frame_bottom
         if chars.draw:
             return self.__parse_horizontal_line_without_text(chars.charset)
         return []
 
     def _get_vertical_line_special(self) -> list[OutputPart]:
-        chars = self._charsets.get_charset(self._actual_used_charset).frame_special
+        chars = self._charsets.get_charset(self._active_charset).frame_special
         if chars.draw:
             return self.__parse_horizontal_line_without_text(chars.charset)
         return []
@@ -357,7 +365,7 @@ class RowParser:
     # -----------------------------------------------------------------------------------------------------
     # Parser
     # -----------------------------------------------------------------------------------------------------
-    def _parse_row(self) -> list[OutputPart]:
+    def _parse_row(self):
         """create the complete row
 
         Args:
@@ -368,16 +376,15 @@ class RowParser:
         """
         # │               fgtZZZZff           │                ggg │                      hhh             │
         # left distance space text distance middle        ....       middle distance space text distance right
-        result_row = []
+        self._result_row = []
         self.__check_row_for_data()
-        self.__check_cell_amount()
+        self.__check_row_ready()
         self.__parse_step_1_fill_up()
-        result_row += self._get_vertical_line_top()
+        self._result_row += self._get_vertical_line_top()
         # for evry line in the cells iterarte over all cells and try to get the line
         for line_counter in range(max(self.__line_stack_sizes)):
-            result_row += self.__parse_line_with_text(line_counter)
-        result_row += self._get_vertical_line_bottom()
-        return result_row
+            self._result_row += self.__parse_line_with_text(line_counter)
+        self._result_row += self._get_vertical_line_bottom()
 
     def __parse_text_inside_line(self, line_text: str, widh: int, allign) -> str:
         spaces_left = self._cell_distance_text.left * " "
@@ -407,7 +414,7 @@ class RowParser:
             list[OutputPart]: the parsed line with spaces, boarders, text and **kwargs
         """
         border_chars = self._charsets.get_charset(
-            self._actual_used_charset
+            self._active_charset
         ).frame_border.charset
         if len(border_chars) == 3:
             left, middle, right = border_chars
@@ -501,6 +508,8 @@ class RowParser:
             if variant == "line"
             else sensible_lengt_text_line
         )
+        if chars is None:
+            return
         if len(chars) != check_len and len(chars) != func(len(self._cells_width)):
             raise TypeError(
                 f"The legth of of boarder chars must be {check_len} by standart\n"
@@ -515,13 +524,17 @@ class RowParser:
             for _ in self._cells_allign:
                 self.add_cell("")
 
-    def __check_cell_amount(self):
+    def __check_row_ready(self):
         """check if the len of data and the amount of cells is the same
 
         Raises:
             IndexError: _description_
         """
-        if len(self._row) != self._max_cell_amount():
+        if len(self._row) < self._max_cell_amount():
+            return False
+        elif len(self._row) == self._max_cell_amount():
+            return True
+        else:
             data = [x.get_line() for x in self._row]
             raise IndexError(
                 f"the lenth of rows: {len(self._row)} - {data} - is not the same as \n"
@@ -529,8 +542,9 @@ class RowParser:
                 + " if you want to start a new row you may call clear_row"
             )
 
+    # -------------------------------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "".join([str(x) for x in self.get_row()])
+        return "".join([str(x) for x in self._result_row])
 
 
 class TextTables:
@@ -570,12 +584,9 @@ class TextTables:
 
     def end_header_row(self):
         self._row_headers = self._parser_header.get_row()
-        self._parser_header.clear_row()
 
     def end_table_row(self):
         self._row_data += self._parser_table.get_row()
-        self._parser_header.clear_row()
-        pass
 
     def get(self):
         pass
