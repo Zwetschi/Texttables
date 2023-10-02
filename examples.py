@@ -61,9 +61,9 @@ def example_parser_1():
         ["Johannes", "44", 55],
         ["Volker", 2.7, "idk"],
     ]
-    parser = LineParser()
+    parser = LineParser(False)
     parser.set_cell_aligns("rrc")
-    parser.set_cell_widths([15, 20, 23])
+    parser.set_cell_widths([15, 20, 8])
     parser.add_row(header)
     print(parser.get_border_top_bottom("utf_8_top_1"))
     print(parser.get_row())

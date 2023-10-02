@@ -167,10 +167,11 @@ class BorderChars:
 
 
 class LineParser:
-    def __init__(self) -> None:
+    def __init__(self, rise_parsing_errors=True) -> None:
         self._charsets = BorderChars()
         self._row: list[CellWrapper] = []
         self.__line_stack_sizes = []
+        self.rise_parsing_errors = rise_parsing_errors
         self.set_cell_text_to_border()
         self.set_line_align_indent()
 
@@ -395,7 +396,8 @@ class LineParser:
                 )
             )
         else:
-            raise Exception("never happen")
+            if self.rise_parsing_errors:
+                raise Exception("never happen")
         result.append(OutputPart(self._cell_distance_text.right, "cell_align_right"))
         return result
 
@@ -482,10 +484,10 @@ class LineParser:
     # -----------------------------------------------------------------------------------------------------
     def __check_text_and_cell_width(self, line_text, width):
         if len(line_text) > width - self._cell_distance_text.sum:
-            raise ValueError(
-                f"'{line_text}' is larger then cell width {width} - {self._cell_distance_text.sum} (cell distanes from lfet and right)\n"
-                + f"minimum cell width is: {len(line_text)+ self._cell_distance_text.sum}"
-            )
+            error_message = f"'{line_text}' is larger then cell width {width} - {self._cell_distance_text.sum} (cell distanes from left and right)\n minimum cell width is: {len(line_text)+ self._cell_distance_text.sum}"
+            if self.rise_parsing_errors:
+                raise ValueError(error_message)
+            print(f"WARNING: {error_message}")
 
     def __check_border_chars(self, chars: list[str], check_len: int) -> list[str]:
         """only check if the chars input make sense"""
@@ -563,8 +565,7 @@ class TextTables:
         self._main_header = []
         self._row_headers: list[OutputPart] = []
         self._row_data: list[OutputPart] = []
-        self._parser_header = LineParser()
-        self._parser_table = LineParser()
+        self._parser = LineParser()
 
     def add_header_lines(self, header_lines: list[str]):
         """add the lines of the header (not cells)"""
@@ -579,24 +580,13 @@ class TextTables:
                 self._main_header.append(header_line)
 
     def set_cell_width(self, cells_width: list[int]):
-        self._parser_header.set_cell_widths(cells_width)
-        self._parser_table.set_cell_widths(cells_width)
+        self._parser.set_cell_widths(cells_width)
 
     def set_cell_align(self, cells_align: list[str]):
-        self._parser_header.set_cell_widths(cells_align)
-        self._parser_table.set_cell_widths(cells_align)
+        self._parser.set_cell_aligns(cells_align)
 
-    def add_header_cell(self, cell, *args):
-        self._parser_header.add_cell(cell, *args)
+    def add_row_header(self, row: list[str]):
+        self._parser.add_row(row)
 
-    def add_table_cell(self, cell, *args):
-        self._parser_table.add_cell(cell, *args)
-
-    def end_header_row(self):
-        self._row_headers = self._parser_header.get_row()
-
-    def end_table_row(self):
-        self._row_data += self._parser_table.get_row()
-
-    def get(self):
-        pass
+    def add_row_data(self, row: list[str]):
+        self._parser.add_row(row)
