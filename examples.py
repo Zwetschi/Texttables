@@ -25,7 +25,7 @@ parser_header.set_cols_distance_from_left([15, 30, 70])
 for cell in header:
     parser_header.add_cell(cell)
 
-print(parser_header.get_border_top_bottom("000"))
+print(parser_header.get_border_top_bottom_string("000"))
 print(parser_header.get_row_string())
 # print(parser_header.get_border_horizontal_string("222"))
 
@@ -34,14 +34,14 @@ parser_data.set_cell_align("clcr")
 parser_data.set_cols_distance_from_left([15, 30, 50, 70])
 parser_data.set_border_chars_top_bottom("162", "╞═╪═╪═╤═╡")
 
-print(parser_data.get_border_top_bottom())
+print(parser_data.get_border_top_bottom_string())
 for row in data:
     for cell in row:
         parser_data.add_cell(cell)
     print(parser_data.get_row_string())
 
     parser_data.clear_data()
-print(parser_data.get_border_top_bottom("111"))
+print(parser_data.get_border_top_bottom_string("111"))
 # parser_header.set_frame_vertical_line_bottom(True
 
 

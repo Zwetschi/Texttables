@@ -273,7 +273,7 @@ class LineParser:
         self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
         self._row.append(cell_wrapper)
 
-    def get_horizontal_border(self, boarder_chars_name: str = None) -> list[OutputPart]:
+    def get_border_top_bottom(self, boarder_chars_name: str = None) -> list[OutputPart]:
         """_summary_
 
         Args:
@@ -285,7 +285,7 @@ class LineParser:
         """
         return self.__parse_line_without_text(boarder_chars_name)
 
-    def get_border_top_bottom(self, boarder_chars_name: str = None) -> str:
+    def get_border_top_bottom_string(self, boarder_chars_name: str = None) -> str:
         """
 
         Args:
@@ -301,6 +301,16 @@ class LineParser:
             [str(part) for part in self.__parse_line_without_text(boarder_chars_name)]
         )
 
+    def get_line_by_line(self, boarder_chars_name: str = None) -> list[OutputPart]:
+        """NOTE mehtod is a iterable"""
+        self.__check_row_for_data()
+        self.__check_amount_of_cells()
+        self.__parse_step_1_fill_up()
+        # for evry line in the cells iterarte over all cells and try to get the line
+        for line_counter in range(max(self.__line_stack_sizes)):
+            yield self.__parse_line_with_text(line_counter, boarder_chars_name)
+        # return result_row
+
     def get_row(self, boarder_chars_name: str = None) -> list[OutputPart]:
         """_summary_
 
@@ -311,7 +321,10 @@ class LineParser:
         Returns:
             list[OutputPart]: _description_
         """
-        return self._parse_row_with_text(boarder_chars_name)
+        result = []
+        for line in self.get_line_by_line(boarder_chars_name):
+            result += line
+        return result
 
     def get_row_string(self, boarder_chars_name: str = None) -> str:
         """_summary_
@@ -323,9 +336,8 @@ class LineParser:
         Returns:
             str: example:
         """
-        return "".join(
-            [str(part) for part in self._parse_row_with_text(boarder_chars_name)]
-        )
+
+        return "".join([str(part) for part in self.get_row(boarder_chars_name)])
 
     def clear_data(self):
         self._row = []
@@ -341,15 +353,6 @@ class LineParser:
     # -----------------------------------------------------------------------------------------------------
     # Parser
     # -----------------------------------------------------------------------------------------------------
-    def _parse_row_with_text(self, boarder_chars_name: str = None) -> list[OutputPart]:
-        result_row = []
-        self.__check_row_for_data()
-        self.__check_amount_of_cells()
-        self.__parse_step_1_fill_up()
-        # for evry line in the cells iterarte over all cells and try to get the line
-        for line_counter in range(max(self.__line_stack_sizes)):
-            result_row += self.__parse_line_with_text(line_counter, boarder_chars_name)
-        return result_row
 
     def __parse_text_inside_cell(
         self, line_text: str, widh: int, align, _actual_cell: CellWrapper
