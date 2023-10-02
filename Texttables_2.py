@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 class CellWrapper:
     """
+    Check and modiefie the input
     ┌──────────────────────┬────────────────────────┐
     │          CellWrapper │        CellWrapper     │
     │                      │                        │
@@ -54,9 +55,9 @@ class OutputPart:
         "frame",
         "text",
         "end_of_line",
-        "end_of_row",
         "cell_align_right",
         "cell_align_left",
+        "indent",
     ]
 
     def __init__(self, part: str, token: str, **kwargs) -> None:
@@ -84,7 +85,7 @@ class OutputPart:
         return self.__part
 
 
-class BorderCharsSets:
+class BorderChars:
     CHARS_UNICODE_1 = "─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬"
     CHARS_UNICODE_2 = "─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧"
     CHARS_UNICODE_3 = "┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═"
@@ -123,13 +124,15 @@ class BorderCharsSets:
         self.__last_top_bottom_key = name
         self._border_chars_top_bottom[name] = chars
 
-    def get_boarder_top_bottom(self, name: str):
+    def get_boarder_top_bottom(self, name: str) -> list[str]:
         if name is None:
             return self._border_chars_top_bottom[self.__last_top_bottom_key]
         if name not in self._border_chars_top_bottom.keys():
-            raise KeyError(
-                f"{name} is not in {self._border_chars_top_bottom.keys()}\n"
-                + f"set boarder chars first by calling '{self.set_boarder_top_bottom.__name__}'"
+            raise Exception(
+                f"'{name}' dount exist! boarder options:\n"
+                + str(list((self._border_chars_top_bottom.keys())))
+                + "\n"
+                + f"To use a your own chars, set boarder chars first by calling '{self.set_boarder_top_bottom.__name__}'"
             )
         return self._border_chars_top_bottom[name]
 
@@ -165,12 +168,13 @@ class BorderCharsSets:
 
 class LineParser:
     def __init__(self) -> None:
-        self._charsets = BorderCharsSets()
+        self._charsets = BorderChars()
         self._row: list[CellWrapper] = []
         self.__line_stack_sizes = []
         self.set_cell_text_to_border()
+        self.set_line_align_indent()
 
-    def set_cell_align(self, cells_align: list[str]):
+    def set_cell_aligns(self, cells_align: list[str]):
         """set cell align
 
         set a align for evry single cell
@@ -201,7 +205,7 @@ class LineParser:
                 )
         self._cells_align = cells_align
 
-    def set_cell_width(self, cells_width: list[int]):
+    def set_cell_widths(self, cells_width: list[int]):
         """cols widht\n
         ├────────20──────────┼─────────20────────┼──────────20─────────┤\n"""
         for width in cells_width:
@@ -213,8 +217,9 @@ class LineParser:
                 )
         self._cells_width = cells_width
 
-    def set_line_align_left(self, align):
-        pass
+    def set_line_align_indent(self, align: int = 0):
+        """Set an align before the line to get more distance from left"""
+        self._left_line_indent: str = align * " "
 
     def set_cols_distance_from_left(self, distances: list[int]):
         """
@@ -230,7 +235,7 @@ class LineParser:
             - (self._cell_distance_text.sum + 1) // 2
             for i in range(len(distances) - 1)
         ]
-        self.set_cell_width(breite_real)
+        self.set_cell_widths(breite_real)
 
     def set_border_chars_left_right(self, name: str, chars: list[str]):
         """─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬
@@ -249,13 +254,13 @@ class LineParser:
         self._charsets.set_boarder_top_bottom(name, chars)
 
     def set_cell_text_to_border(self, left: str = " ", right: str = " "):
-        """set the distance to the frame on the text in echt cell
-        left = Y = " "
-        right = X = " "
-        ┌────────────────────┐
-        │Y               oneX│
-        │Y               oneX│
-        └────────────────────┘
+        """set the distance to the frame on the text in echt cell\n
+        left = Y = " " \n
+        right = X = " " \n
+        ┌────────────────────┐\n
+        │Y               oneX│\n
+        │Y               oneX│\n
+        └────────────────────┘\n
         """
         if not isinstance(left, str) or not isinstance(left, str):
             raise ValueError(f"left and right must be string!")
@@ -273,7 +278,14 @@ class LineParser:
         self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
         self._row.append(cell_wrapper)
 
-    def get_border_top_bottom(self, boarder_chars_name: str = None) -> list[OutputPart]:
+    def add_row(self, row: list[str]):
+        self.clear_data_advanced()
+        for cell in row:
+            self.add_cell(cell)
+
+    def get_border_top_bottom_advanced(
+        self, boarder_chars_name: str = None
+    ) -> list[OutputPart]:
         """_summary_
 
         Args:
@@ -285,7 +297,7 @@ class LineParser:
         """
         return self.__parse_line_without_text(boarder_chars_name)
 
-    def get_border_top_bottom_string(self, boarder_chars_name: str = None) -> str:
+    def get_border_top_bottom(self, boarder_chars_name: str = None) -> str:
         """
 
         Args:
@@ -311,7 +323,7 @@ class LineParser:
             yield self.__parse_line_with_text(line_counter, boarder_chars_name)
         # return result_row
 
-    def get_row(self, boarder_chars_name: str = None) -> list[OutputPart]:
+    def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputPart]:
         """_summary_
 
         Args:
@@ -326,7 +338,7 @@ class LineParser:
             result += line
         return result
 
-    def get_row_string(self, boarder_chars_name: str = None) -> str:
+    def get_row(self, boarder_chars_name: str = None) -> str:
         """_summary_
 
         Args:
@@ -337,9 +349,11 @@ class LineParser:
             str: example:
         """
 
-        return "".join([str(part) for part in self.get_row(boarder_chars_name)])
+        return "".join(
+            [str(part) for part in self.get_row_adwanced(boarder_chars_name)]
+        )
 
-    def clear_data(self):
+    def clear_data_advanced(self):
         self._row = []
         self.__line_stack_sizes = []
 
@@ -407,7 +421,10 @@ class LineParser:
             left, middle, right = border_chars
             border_chars = [left] + [middle] * (len(self._cells_width) - 1) + [right]
 
-        result_line: list[OutputPart] = [OutputPart(border_chars[0], "frame")]
+        result_line: list[OutputPart] = [
+            OutputPart(self._left_line_indent, "indent"),
+            OutputPart(border_chars[0], "frame"),
+        ]
 
         for _actual_cell, width, align, border_char in zip(
             self._row, self._cells_width, self._cells_align, border_chars[1:]
@@ -438,7 +455,7 @@ class LineParser:
         left   between     middle   between     middle   between    right"""
 
         chars = self._charsets.get_boarder_top_bottom(boarder_chars_name).copy()
-        result_line = []
+
         if len(chars) == 4:
             # create one char for every place in line
             left, between, middle, right = chars
@@ -449,7 +466,10 @@ class LineParser:
                 + [right]
             )
 
-        result_line.append(OutputPart(chars[0], "frame"))
+        result_line = [
+            OutputPart(self._left_line_indent, "indent"),
+            OutputPart(chars[0], "frame"),
+        ]
         chars = chars[1:]
         for position, cell_width in zip(range(0, len(chars), 2), self._cells_width):
             result_line.append(
@@ -508,7 +528,7 @@ class LineParser:
             # cells widht is not set
             raise AttributeError(
                 "Before set the border chars, set the cell widhts by calling "
-                + f"'{self.set_cell_width.__name__}' or '{self.set_border_chars_left_right.__name__}'"
+                + f"'{self.set_cell_widths.__name__}' or '{self.set_border_chars_left_right.__name__}'"
             )
         return chars
 
@@ -544,12 +564,11 @@ class TextTables:
         self._main_header = []
         self._row_headers: list[OutputPart] = []
         self._row_data: list[OutputPart] = []
-        # self._header_align = []
-        # self._cols_align = []
         self._parser_header = LineParser()
         self._parser_table = LineParser()
 
     def add_header_lines(self, header_lines: list[str]):
+        """add the lines of the header (not cells)"""
         if not isinstance(header_lines, (list, str)):
             raise Exception("must be str or list of string")
         if isinstance(header_lines, str):
@@ -561,12 +580,12 @@ class TextTables:
                 self._main_header.append(header_line)
 
     def set_cell_width(self, cells_width: list[int]):
-        self._parser_header.set_cell_width(cells_width)
-        self._parser_table.set_cell_width(cells_width)
+        self._parser_header.set_cell_widths(cells_width)
+        self._parser_table.set_cell_widths(cells_width)
 
     def set_cell_align(self, cells_align: list[str]):
-        self._parser_header.set_cell_width(cells_align)
-        self._parser_table.set_cell_width(cells_align)
+        self._parser_header.set_cell_widths(cells_align)
+        self._parser_table.set_cell_widths(cells_align)
 
     def add_header_cell(self, cell, **kwargs):
         self._parser_header.add_cell(cell, **kwargs)
@@ -582,6 +601,3 @@ class TextTables:
 
     def get(self):
         pass
-
-    def __repr__(self) -> str:
-        return "TODO"
