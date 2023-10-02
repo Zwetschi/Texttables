@@ -50,7 +50,14 @@ class CellTextDistance(NamedTuple):
 
 
 class OutputPart:
-    TOKENS = ["frame", "text", "end_of_line", "end_of_row"]
+    TOKENS = [
+        "frame",
+        "text",
+        "end_of_line",
+        "end_of_row",
+        "cell_align_right",
+        "cell_align_left",
+    ]
 
     def __init__(self, part: str, token: str, **kwargs) -> None:
         self.__part = part
@@ -136,7 +143,7 @@ class BorderCharsSets:
         if name not in self._border_chars_left_right.keys():
             raise KeyError(
                 f"{name} is not in {self._border_chars_left_right.keys()}\n"
-                + f"set boarder chars first by calling '{self.set_boarder_left_right.__name__}''"
+                + f"set boarder chars first by caling '{self.set_boarder_left_right.__name__}''"
             )
 
         return self._border_chars_left_right[name]
@@ -156,23 +163,23 @@ class BorderCharsSets:
             self._border_chars_left_right[key] = value
 
 
-class RowParser:
+class LineParser:
     def __init__(self) -> None:
         self._charsets = BorderCharsSets()
         self._row: list[CellWrapper] = []
         self.__line_stack_sizes = []
         self.set_cell_text_to_border()
 
-    def set_cell_allign(self, cells_allign: list[str]):
-        """set cell allign
+    def set_cell_align(self, cells_align: list[str]):
+        """set cell align
 
-        set a allign for evry single cell
+        set a align for evry single cell
         'c': center
         'r': right
         'l'. left
 
         Args:
-            cells_allign (list[str]): example: ['c', 'r', 'l'] for a table with 3 colls
+            cells_align (list[str]): example: ['c', 'r', 'l'] for a table with 3 colls
 
         Raises:
             IndexError: _description_
@@ -180,30 +187,23 @@ class RowParser:
             ValueError: _description_
         """
 
-        if isinstance(cells_allign, str):
-            cells_allign = list(cells_allign)
-        if not isinstance(cells_allign, list):
+        if isinstance(cells_align, str):
+            cells_align = list(cells_align)
+        if not isinstance(cells_align, list):
             raise TypeError(
-                f"allign must be a list or string - allign input: {cells_allign}"
+                f"align must be a list or string - align input: {cells_align}"
             )
 
-        for value in cells_allign:
+        for value in cells_align:
             if value not in ("r", "l", "c"):
                 raise ValueError(
-                    f"all alligns must be 'r', 'l' or 'c' - allign input: {value} - {cells_allign}"
+                    f"all aligns must be 'r', 'l' or 'c' - align input: {value} - {cells_align}"
                 )
-        self._cells_allign = cells_allign
+        self._cells_align = cells_align
 
     def set_cell_width(self, cells_width: list[int]):
         """cols widht\n
         ├────────20──────────┼─────────20────────┼──────────20─────────┤\n"""
-        # try:
-        #     if len(cells_width) != len(self._cells_allign):
-        #         raise IndexError(
-        #             f"Amount off cells widths ({self._cells_allign}) and cells allign ({cells_width}) is not the same"
-        #         )
-        # except AttributeError:
-        #     pass
         for width in cells_width:
             if not isinstance(width, int):
                 raise ValueError(f"{width} in {cells_width} is not an integer!")
@@ -212,6 +212,9 @@ class RowParser:
                     f"a cell cant be 0 or smaler ({width} in {cells_width}"
                 )
         self._cells_width = cells_width
+
+    def set_line_align_left(self, align):
+        pass
 
     def set_cols_distance_from_left(self, distances: list[int]):
         """
@@ -237,7 +240,7 @@ class RowParser:
         chars = self.__check_border_chars(chars, check_len=3)
         self._charsets.set_boarder_left_right(name, chars)
 
-    def set_border_chars_horizontal(self, name, chars: list[str]):
+    def set_border_chars_top_bottom(self, name, chars: list[str]):
         """─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬
         ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧
         ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═
@@ -282,7 +285,7 @@ class RowParser:
         """
         return self.__parse_line_without_text(boarder_chars_name)
 
-    def get_border_horizontal_string(self, boarder_chars_name: str = None) -> str:
+    def get_border_top_bottom(self, boarder_chars_name: str = None) -> str:
         """
 
         Args:
@@ -329,7 +332,7 @@ class RowParser:
         self.__line_stack_sizes = []
 
     def _max_cell_amount(self) -> int:
-        # return len(self._cells_allign)
+        # return len(self._cells_align)
         return len(self._cells_width)
 
     def _get_max_line_stack_size(self) -> int:
@@ -348,20 +351,37 @@ class RowParser:
             result_row += self.__parse_line_with_text(line_counter, boarder_chars_name)
         return result_row
 
-    def __parse_text_inside_line(self, line_text: str, widh: int, allign) -> str:
-        spaces_left = self._cell_distance_text.left
-        spaces_right = self._cell_distance_text.right
-        spaces_allign = widh - len(line_text) - self._cell_distance_text.sum
-        if allign in ("r", "right"):
-            return spaces_left + spaces_allign * " " + line_text + spaces_right
-        elif allign in ("l", "left"):
-            return spaces_left + line_text + spaces_allign * " " + spaces_right
-        elif allign in ("c", "center"):
-            center_left = (spaces_allign + 1) // 2 * " "
-            center_right = spaces_allign // 2 * " "
-            return spaces_left + center_left + line_text + center_right + spaces_right
+    def __parse_text_inside_cell(
+        self, line_text: str, widh: int, align, _actual_cell: CellWrapper
+    ) -> list[OutputPart]:
+        result = [OutputPart(self._cell_distance_text.left, "cell_align_left")]
+        spaces_align = widh - len(line_text) - self._cell_distance_text.sum
+        if align in ("r", "right"):
+            result.append(
+                OutputPart(
+                    spaces_align * " " + line_text, token="text", **_actual_cell.kwargs
+                )
+            )
+        elif align in ("l", "left"):
+            result.append(
+                OutputPart(
+                    line_text + spaces_align * " ", token="text", **_actual_cell.kwargs
+                )
+            )
+        elif align in ("c", "center"):
+            center_left = (spaces_align + 1) // 2 * " "
+            center_right = spaces_align // 2 * " "
+            result.append(
+                OutputPart(
+                    center_left + line_text + center_right,
+                    token="text",
+                    **_actual_cell.kwargs,
+                )
+            )
         else:
             raise Exception("never happen")
+        result.append(OutputPart(self._cell_distance_text.right, "cell_align_right"))
+        return result
 
     def __parse_line_with_text(
         self, line_counter: int, boarder_chars_name: str = None
@@ -386,16 +406,15 @@ class RowParser:
 
         result_line: list[OutputPart] = [OutputPart(border_chars[0], "frame")]
 
-        for _actual_cell, width, allign, border_char in zip(
-            self._row, self._cells_width, self._cells_allign, border_chars[1:]
+        for _actual_cell, width, align, border_char in zip(
+            self._row, self._cells_width, self._cells_align, border_chars[1:]
         ):
-            line_text_line = _actual_cell.get_line(line_counter)
-            self.__check_text_and_cell_width(line_text_line, width)
-            alligned_text = self.__parse_text_inside_line(line_text_line, width, allign)
-
-            result_line.append(
-                OutputPart(alligned_text, token="text", **_actual_cell.kwargs)
+            cell_text_line = _actual_cell.get_line(line_counter)
+            self.__check_text_and_cell_width(cell_text_line, width)
+            result_line += self.__parse_text_inside_cell(
+                cell_text_line, width, align, _actual_cell
             )
+
             result_line.append(OutputPart(border_char, "frame"))
         result_line.append(OutputPart("\n", "end_of_line"))
         return result_line
@@ -493,7 +512,7 @@ class RowParser:
     def __check_row_for_data(self):
         """if there are no data in the table to parse, create dummy data"""
         if len(self._row) == 0:
-            for _ in self._cells_allign:
+            for _ in self._cells_align:
                 self.add_cell("")
 
     def __check_amount_of_cells(self):
@@ -503,12 +522,12 @@ class RowParser:
             IndexError: _description_
         """
 
-        if not (len(self._row) == len(self._cells_width) == len(self._cells_allign)):
+        if not (len(self._row) == len(self._cells_width) == len(self._cells_align)):
             raise IndexError(
-                "The lenght of data cells, cell width and cell allign ist not the same!\n"
+                "The lenght of data cells, cell width and cell align ist not the same!\n"
                 + f"data: (len {len(self._row)}) {[x.get_line() for x in self._row]}\n"
                 + f"cells width: (len {len(self._cells_width)}) {self._cells_width}\n"
-                + f"cells allign: (len {len(self._cells_allign)}) {self._cells_allign}\n"
+                + f"cells align: (len {len(self._cells_align)}) {self._cells_align}\n"
             )
 
     # -------------------------------------------------------------------------------------------
@@ -522,10 +541,10 @@ class TextTables:
         self._main_header = []
         self._row_headers: list[OutputPart] = []
         self._row_data: list[OutputPart] = []
-        # self._header_allign = []
-        # self._cols_allign = []
-        self._parser_header = RowParser()
-        self._parser_table = RowParser()
+        # self._header_align = []
+        # self._cols_align = []
+        self._parser_header = LineParser()
+        self._parser_table = LineParser()
 
     def add_header_lines(self, header_lines: list[str]):
         if not isinstance(header_lines, (list, str)):
@@ -542,9 +561,9 @@ class TextTables:
         self._parser_header.set_cell_width(cells_width)
         self._parser_table.set_cell_width(cells_width)
 
-    def set_cell_allign(self, cells_allign: list[str]):
-        self._parser_header.set_cell_width(cells_allign)
-        self._parser_table.set_cell_width(cells_allign)
+    def set_cell_align(self, cells_align: list[str]):
+        self._parser_header.set_cell_width(cells_align)
+        self._parser_table.set_cell_width(cells_align)
 
     def add_header_cell(self, cell, **kwargs):
         self._parser_header.add_cell(cell, **kwargs)

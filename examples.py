@@ -1,4 +1,4 @@
-from Texttables_2 import RowParser
+from Texttables_2 import LineParser
 from typing import NamedTuple
 import tkinter
 
@@ -9,17 +9,6 @@ def print(*args):
     p(*args, end="")
 
 
-# ch = ParserRow(["one\none", "second\nsecond", " "], [20, 20, 20], ["r"] * 3)
-# ch = ParserRow([20, 20, 20])
-# print(ch._get_vertical_line_top())
-
-# x = CellWrapper("hghthghgh")
-# for k in x.cell_text:
-#     print(k.line_text)
-# print(x.cell_text.line_text)
-# ch.set_frame_boarder(True)
-# ch.set_vertical_line_bottom(True)
-# ch.set_vertical_line_special(True)
 header = ["Header1", "Header2.0\nHeader2.1", "Header3"]
 data = [
     ["Franz1", 563, "Nothing", "Joke"],
@@ -28,31 +17,31 @@ data = [
 ]
 
 
-parser_header = RowParser()
-parser_header.set_cell_allign("rrc")
+parser_header = LineParser()
+parser_header.set_cell_align("rrc")
 parser_header.set_cols_distance_from_left([15, 30, 70])
 
 
 for cell in header:
     parser_header.add_cell(cell)
 
-print(parser_header.get_border_horizontal_string("000"))
+print(parser_header.get_border_top_bottom("000"))
 print(parser_header.get_row_string())
 # print(parser_header.get_border_horizontal_string("222"))
 
-parser_data = RowParser()
-parser_data.set_cell_allign("clcr")
+parser_data = LineParser()
+parser_data.set_cell_align("clcr")
 parser_data.set_cols_distance_from_left([15, 30, 50, 70])
-parser_data.set_border_chars_horizontal("162", "╞═╪═╪═╤═╡")
+parser_data.set_border_chars_top_bottom("162", "╞═╪═╪═╤═╡")
 
-print(parser_data.get_border_horizontal_string())
+print(parser_data.get_border_top_bottom())
 for row in data:
     for cell in row:
         parser_data.add_cell(cell)
     print(parser_data.get_row_string())
 
     parser_data.clear_data()
-print(parser_data.get_border_horizontal_string("111"))
+print(parser_data.get_border_top_bottom("111"))
 # parser_header.set_frame_vertical_line_bottom(True
 
 
@@ -138,7 +127,7 @@ class Example:
         self.root.mainloop()
 
     def table(self):
-        p1 = RowParser("clrr", [20, 30, 10, 30])
+        p1 = LineParser("clrr", [20, 30, 10, 30])
         data = [
             self.Data(1, "blue"),
             self.Data("ghgh", "red"),
