@@ -10,9 +10,9 @@ class CellWrapper:
     └──────────────────────┴────────────────────────┘
     """
 
-    def __init__(self, text: str, **kwargs) -> None:
+    def __init__(self, text: str, *args) -> None:
         self._cell_text: list[str] = []
-        self.kwargs = kwargs
+        self.args = args
         self.__set_cell_text(text)
 
     def fill_up_lines(self, fill_empty_lines: int):
@@ -37,7 +37,7 @@ class CellWrapper:
             raise TypeError(
                 "The input must be str, float or int.\n"
                 + f"the input is: {cell_text}"
-                + "if you want to input an objekt you can use **kwargs in add_cell"
+                + "if you want to input an objekt you can use *args in add_cell"
             )
         elif isinstance(cell_text, (float, int)):
             return str(cell_text)
@@ -60,10 +60,10 @@ class OutputPart:
         "indent",
     ]
 
-    def __init__(self, part: str, token: str, **kwargs) -> None:
+    def __init__(self, part: str, token: str, *args) -> None:
         self.__part = part
         self.__set_token(token)
-        self.kwargs = kwargs
+        self.args = args
 
     def get_part(self):
         return self.__part
@@ -267,21 +267,24 @@ class LineParser:
 
         self._cell_distance_text = CellTextDistance(left, right, len(left) + len(right))
 
-    def add_cell(self, cell_text: str, **kwargs):
+    def add_cell(self, cell_text: str, *args):
         """add a cell to row (dount forget do call clear_row when finished)
 
         kwargs is to set outher attributes like color
         this attributes is on kwargs["your_attrubure"] on the output objects
         (not every output wrapper has this attribut!)
         """
-        cell_wrapper = CellWrapper(cell_text, **kwargs)
+        cell_wrapper = CellWrapper(cell_text, *args)
         self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
         self._row.append(cell_wrapper)
 
     def add_row(self, row: list[str]):
-        self.clear_data_advanced()
+        self.clear_data()
         for cell in row:
-            self.add_cell(cell)
+            if isinstance(cell, (tuple, list)):
+                self.add_cell(*cell)
+            else:
+                self.add_cell(cell)
 
     def get_border_top_bottom_advanced(
         self, boarder_chars_name: str = None
@@ -353,7 +356,7 @@ class LineParser:
             [str(part) for part in self.get_row_adwanced(boarder_chars_name)]
         )
 
-    def clear_data_advanced(self):
+    def clear_data(self):
         self._row = []
         self.__line_stack_sizes = []
 
@@ -375,15 +378,11 @@ class LineParser:
         spaces_align = widh - len(line_text) - self._cell_distance_text.sum
         if align in ("r", "right"):
             result.append(
-                OutputPart(
-                    spaces_align * " " + line_text, token="text", **_actual_cell.kwargs
-                )
+                OutputPart(spaces_align * " " + line_text, "text", _actual_cell.args)
             )
         elif align in ("l", "left"):
             result.append(
-                OutputPart(
-                    line_text + spaces_align * " ", token="text", **_actual_cell.kwargs
-                )
+                OutputPart(line_text + spaces_align * " ", "text", _actual_cell.args)
             )
         elif align in ("c", "center"):
             center_left = (spaces_align + 1) // 2 * " "
@@ -391,8 +390,8 @@ class LineParser:
             result.append(
                 OutputPart(
                     center_left + line_text + center_right,
-                    token="text",
-                    **_actual_cell.kwargs,
+                    "text",
+                    _actual_cell.args,
                 )
             )
         else:
@@ -412,7 +411,7 @@ class LineParser:
             line_counter (int): the position of the line in a List on a CellWrapper class
 
         Returns:
-            list[OutputPart]: the parsed line with spaces, boarders, text and **kwargs
+            list[OutputPart]: the parsed line with spaces, boarders, text and *args
         """
         # │               fgtZZZZff           │                ggg │                      hhh             │
         # left distance space text distance middle        ....       middle distance space text distance right
@@ -587,11 +586,11 @@ class TextTables:
         self._parser_header.set_cell_widths(cells_align)
         self._parser_table.set_cell_widths(cells_align)
 
-    def add_header_cell(self, cell, **kwargs):
-        self._parser_header.add_cell(cell, **kwargs)
+    def add_header_cell(self, cell, *args):
+        self._parser_header.add_cell(cell, *args)
 
-    def add_table_cell(self, cell, **kwargs):
-        self._parser_table.add_cell(cell, **kwargs)
+    def add_table_cell(self, cell, *args):
+        self._parser_table.add_cell(cell, *args)
 
     def end_header_row(self):
         self._row_headers = self._parser_header.get_row()
