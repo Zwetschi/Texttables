@@ -64,7 +64,15 @@ class OutputChunk:
     def __init__(self, chunk: str, token: str, *args) -> None:
         self.__chunk = chunk
         self.__set_token(token)
+        # if args == ():
+        #     print(le)
         self.args = args
+
+    def get_args(self):
+        if len(self.args) == 0:
+            return self.args
+        else:
+            return self.args[0]
 
     def get_chunk(self):
         return self.__chunk
@@ -82,8 +90,8 @@ class OutputChunk:
         """
         return self.__token
 
-    def __repr__(self) -> str:
-        return self.__chunk
+    # def __repr__(self) -> str:
+    #     return self.__chunk
 
 
 class BorderChars:

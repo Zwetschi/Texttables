@@ -5,11 +5,12 @@ from colorama import Fore, Back, Style
 import colorama
 
 colorama.init(autoreset=True)
-p = print
+# colorama.init(autoreset=True)
+# p = print
 
 
-def print(*args):
-    p(*args, end="")
+# def print(*args):
+#     p(*args, end="")
 
 
 class Example:
@@ -112,7 +113,7 @@ def example_parser_2():
 
 def example_table_1():
     header = [
-        ("Header1", "blue"),
+        ("Header1\n756h", "blue"),
         "Header2.0\nHeader2.1",
         ("Header3", "red"),
         "header4",
@@ -130,7 +131,12 @@ def example_table_1():
         texttable.add_row_data(row)
     table = texttable.get_complete()
     for chunk in table:
-        print(chunk)
+        # print(chunk.get_chunk(), len(chunk.args), chunk.args)
+        # print(chunk.args)
+        if "greeen" in chunk.get_args():
+            print(Fore.GREEN, chunk.get_chunk(), end="")
+        else:
+            print(chunk.get_chunk(), end="")
 
 
 # example_parser_1()
