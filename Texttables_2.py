@@ -50,7 +50,7 @@ class CellTextDistance(NamedTuple):
     sum: int
 
 
-class OutputPart:
+class OutputChunk:
     TOKENS = [
         "frame",
         "text",
@@ -58,15 +58,16 @@ class OutputPart:
         "cell_align_right",
         "cell_align_left",
         "indent",
+        "white_space",
     ]
 
-    def __init__(self, part: str, token: str, *args) -> None:
-        self.__part = part
+    def __init__(self, chunk: str, token: str, *args) -> None:
+        self.__chunk = chunk
         self.__set_token(token)
         self.args = args
 
-    def get_part(self):
-        return self.__part
+    def get_chunk(self):
+        return self.__chunk
 
     def __set_token(self, token):
         if token not in self.TOKENS:
@@ -82,7 +83,7 @@ class OutputPart:
         return self.__token
 
     def __repr__(self) -> str:
-        return self.__part
+        return self.__chunk
 
 
 class BorderChars:
@@ -121,6 +122,8 @@ class BorderChars:
         self._init_alternative_keys()
 
     def set_boarder_top_bottom(self, name: str, chars: list[str]):
+        if name is None or chars is None:
+            return
         self.__last_top_bottom_key = name
         self._border_chars_top_bottom[name] = chars
 
@@ -137,6 +140,8 @@ class BorderChars:
         return self._border_chars_top_bottom[name]
 
     def set_boarder_left_right(self, name: str, chars: list[str]):
+        if name is None or chars is None:
+            return
         self.__last_left_right_key = name
         self._border_chars_left_right[name] = chars
 
@@ -167,13 +172,17 @@ class BorderChars:
 
 
 class LineParser:
-    def __init__(self, rise_parsing_errors=True) -> None:
+    def __init__(self, rise_parsing_errors=True, end_of_line=True) -> None:
         self._charsets = BorderChars()
         self._row: list[CellWrapper] = []
         self.__line_stack_sizes = []
-        self.rise_parsing_errors = rise_parsing_errors
+        self._set_rise_parsing_errors(rise_parsing_errors)
+        self._set_end_of_line(end_of_line)
         self.set_cell_text_to_border()
         self.set_line_align_indent()
+        self.set_line_align_outdent()
+        self._cells_align = []
+        self._cells_width = []
 
     def set_cell_aligns(self, cells_align: list[str]):
         """set cell align
@@ -222,6 +231,10 @@ class LineParser:
         """Set an align before the line to get more distance from left"""
         self._left_line_indent: str = align * " "
 
+    def set_line_align_outdent(self, align: int = 0):
+        """Set an align before the line to get more distance from left"""
+        self._left_line_outdent: str = align * " "
+
     def set_cols_distance_from_left(self, distances: list[int]):
         """
         ├──────────────────20┼─────────────────40┼───────────────────60┤\n
@@ -243,16 +256,18 @@ class LineParser:
         ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧
         ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═
         ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯╰ ╴ ╵ ╶ ╷ ╸"""
-        chars = self.__check_border_chars(chars, check_len=3)
-        self._charsets.set_boarder_left_right(name, chars)
+        chars = self.__check_border_chars(name, chars, check_len=3)
+        if chars:
+            self._charsets.set_boarder_left_right(name, chars)
 
-    def set_border_chars_top_bottom(self, name, chars: list[str]):
+    def set_border_chars_top_bottom(self, name: str, chars: list[str]):
         """─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬
         ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧
         ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═
         ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯╰ ╴ ╵ ╶ ╷ ╸"""
-        chars = self.__check_border_chars(chars, check_len=4)
-        self._charsets.set_boarder_top_bottom(name, chars)
+        chars = self.__check_border_chars(name, chars, check_len=4)
+        if chars:
+            self._charsets.set_boarder_top_bottom(name, chars)
 
     def set_cell_text_to_border(self, left: str = " ", right: str = " "):
         """set the distance to the frame on the text in echt cell\n
@@ -268,7 +283,17 @@ class LineParser:
 
         self._cell_distance_text = CellTextDistance(left, right, len(left) + len(right))
 
-    def add_cell(self, cell_text: str, *args):
+    def _set_rise_parsing_errors(self, x: bool):
+        if not isinstance(x, bool):
+            raise Exception(f"Must be bool")
+        self._rise_parsing_errors = x
+
+    def _set_end_of_line(self, x: bool):
+        if not isinstance(x, bool):
+            raise Exception(f"Must be bool")
+        self._end_of_line = x
+
+    def _add_cell(self, cell_text: str, *args):
         """add a cell to row (dount forget do call clear_row when finished)
 
         kwargs is to set outher attributes like color
@@ -279,17 +304,18 @@ class LineParser:
         self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
         self._row.append(cell_wrapper)
 
-    def add_row(self, row: list[str]):
+    def set_row(self, row: list[str]):
+        """add a new row and delete the old data"""
         self.clear_data()
         for cell in row:
             if isinstance(cell, (tuple, list)):
-                self.add_cell(*cell)
+                self._add_cell(*cell)
             else:
-                self.add_cell(cell)
+                self._add_cell(cell)
 
     def get_border_top_bottom_advanced(
         self, boarder_chars_name: str = None
-    ) -> list[OutputPart]:
+    ) -> list[OutputChunk]:
         """_summary_
 
         Args:
@@ -317,7 +343,9 @@ class LineParser:
             [str(part) for part in self.__parse_line_without_text(boarder_chars_name)]
         )
 
-    def get_line_by_line(self, boarder_chars_name: str = None) -> list[OutputPart]:
+    def get_line_by_line_advanced(
+        self, boarder_chars_name: str = None
+    ) -> list[OutputChunk]:
         """NOTE mehtod is a iterable"""
         self.__check_row_for_data()
         self.__check_amount_of_cells()
@@ -325,9 +353,8 @@ class LineParser:
         # for evry line in the cells iterarte over all cells and try to get the line
         for line_counter in range(max(self.__line_stack_sizes)):
             yield self.__parse_line_with_text(line_counter, boarder_chars_name)
-        # return result_row
 
-    def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputPart]:
+    def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputChunk]:
         """_summary_
 
         Args:
@@ -338,7 +365,7 @@ class LineParser:
             list[OutputPart]: _description_
         """
         result = []
-        for line in self.get_line_by_line(boarder_chars_name):
+        for line in self.get_line_by_line_advanced(boarder_chars_name):
             result += line
         return result
 
@@ -361,49 +388,42 @@ class LineParser:
         self._row = []
         self.__line_stack_sizes = []
 
-    def _max_cell_amount(self) -> int:
-        # return len(self._cells_align)
-        return len(self._cells_width)
-
-    def _get_max_line_stack_size(self) -> int:
-        return max(self.__line_stack_sizes)
-
     # -----------------------------------------------------------------------------------------------------
     # Parser
     # -----------------------------------------------------------------------------------------------------
 
     def __parse_text_inside_cell(
         self, line_text: str, widh: int, align, _actual_cell: CellWrapper
-    ) -> list[OutputPart]:
-        result = [OutputPart(self._cell_distance_text.left, "cell_align_left")]
+    ) -> list[OutputChunk]:
+        result = [OutputChunk(self._cell_distance_text.left, "cell_align_left")]
         spaces_align = widh - len(line_text) - self._cell_distance_text.sum
         if align in ("r", "right"):
             result.append(
-                OutputPart(spaces_align * " " + line_text, "text", _actual_cell.args)
+                OutputChunk(spaces_align * " " + line_text, "text", _actual_cell.args)
             )
         elif align in ("l", "left"):
             result.append(
-                OutputPart(line_text + spaces_align * " ", "text", _actual_cell.args)
+                OutputChunk(line_text + spaces_align * " ", "text", _actual_cell.args)
             )
         elif align in ("c", "center"):
             center_left = (spaces_align + 1) // 2 * " "
             center_right = spaces_align // 2 * " "
             result.append(
-                OutputPart(
+                OutputChunk(
                     center_left + line_text + center_right,
                     "text",
                     _actual_cell.args,
                 )
             )
         else:
-            if self.rise_parsing_errors:
+            if self._rise_parsing_errors:
                 raise Exception("never happen")
-        result.append(OutputPart(self._cell_distance_text.right, "cell_align_right"))
+        result.append(OutputChunk(self._cell_distance_text.right, "cell_align_right"))
         return result
 
     def __parse_line_with_text(
         self, line_counter: int, boarder_chars_name: str = None
-    ) -> list[OutputPart]:
+    ) -> list[OutputChunk]:
         """parse one line of the table
 
         (one row can have more then one line)
@@ -418,13 +438,15 @@ class LineParser:
         # │               fgtZZZZff           │                ggg │                      hhh             │
         # left distance space text distance middle        ....       middle distance space text distance right
         border_chars = self._charsets.get_boarder_left_right(boarder_chars_name)
+        if len(self._cells_width) == 0:
+            raise Exception("pls set cell with before parsing rows!")
         if len(border_chars) == 3:
             left, middle, right = border_chars
             border_chars = [left] + [middle] * (len(self._cells_width) - 1) + [right]
 
-        result_line: list[OutputPart] = [
-            OutputPart(self._left_line_indent, "indent"),
-            OutputPart(border_chars[0], "frame"),
+        result_line: list[OutputChunk] = [
+            OutputChunk(self._left_line_indent, "indent"),
+            OutputChunk(border_chars[0], "frame"),
         ]
 
         for _actual_cell, width, align, border_char in zip(
@@ -436,8 +458,10 @@ class LineParser:
                 cell_text_line, width, align, _actual_cell
             )
 
-            result_line.append(OutputPart(border_char, "frame"))
-        result_line.append(OutputPart("\n", "end_of_line"))
+            result_line.append(OutputChunk(border_char, "frame"))
+        result_line.append(OutputChunk(self._left_line_outdent, "white_space"))
+        if self._end_of_line:
+            result_line.append(OutputChunk("\n", "end_of_line"))
         return result_line
 
     def __parse_step_1_fill_up(self):
@@ -446,17 +470,18 @@ class LineParser:
         (fill up)"""
 
         for _actual_cell in self._row:
-            if _actual_cell.get_line_amount() != self._get_max_line_stack_size():
+            if _actual_cell.get_line_amount() != max(self.__line_stack_sizes):
                 _actual_cell.fill_up_lines(
-                    self._get_max_line_stack_size() - _actual_cell.get_line_amount()
+                    max(self.__line_stack_sizes) - _actual_cell.get_line_amount()
                 )
 
-    def __parse_line_without_text(self, boarder_chars_name: str) -> list[OutputPart]:
+    def __parse_line_without_text(self, boarder_chars_name: str) -> list[OutputChunk]:
         """┌────────────────────┬────────────────────┬────────────────────┐
         left   between     middle   between     middle   between    right"""
 
         chars = self._charsets.get_boarder_top_bottom(boarder_chars_name).copy()
-
+        if len(self._cells_width) == 0:
+            raise Exception("pls set cell with before parsing rows!")
         if len(chars) == 4:
             # create one char for every place in line
             left, between, middle, right = chars
@@ -468,15 +493,17 @@ class LineParser:
             )
 
         result_line = [
-            OutputPart(self._left_line_indent, "indent"),
-            OutputPart(chars[0], "frame"),
+            OutputChunk(self._left_line_indent, "indent"),
+            OutputChunk(chars[0], "frame"),
         ]
         chars = chars[1:]
         for position, cell_width in zip(range(0, len(chars), 2), self._cells_width):
             result_line.append(
-                OutputPart(chars[position] * cell_width + chars[position + 1], "frame")
+                OutputChunk(chars[position] * cell_width + chars[position + 1], "frame")
             )
-        result_line.append(OutputPart("\n", "end_of_line"))
+        result_line.append(OutputChunk(self._left_line_outdent, "white_space"))
+        if self._end_of_line:
+            result_line.append(OutputChunk("\n", "end_of_line"))
         return result_line
 
     # -----------------------------------------------------------------------------------------------------
@@ -485,11 +512,13 @@ class LineParser:
     def __check_text_and_cell_width(self, line_text, width):
         if len(line_text) > width - self._cell_distance_text.sum:
             error_message = f"'{line_text}' is larger then cell width {width} - {self._cell_distance_text.sum} (cell distanes from left and right)\n minimum cell width is: {len(line_text)+ self._cell_distance_text.sum}"
-            if self.rise_parsing_errors:
+            if self._rise_parsing_errors:
                 raise ValueError(error_message)
             print(f"WARNING: {error_message}")
 
-    def __check_border_chars(self, chars: list[str], check_len: int) -> list[str]:
+    def __check_border_chars(
+        self, name: str, chars: list[str], check_len: int
+    ) -> list[str]:
         """only check if the chars input make sense"""
 
         def sensible_lengt_hoizontal_line(amount_of_cells):
@@ -513,8 +542,8 @@ class LineParser:
             if check_len == 4
             else sensible_lengt_text_line
         )
-        if chars is None:
-            raise TypeError("Boarder chars cant be None!")
+        if name is None and chars is None:
+            return False
         if isinstance(chars, str):
             chars = list(chars)
         try:
@@ -537,7 +566,7 @@ class LineParser:
         """if there are no data in the table to parse, create dummy data"""
         if len(self._row) == 0:
             for _ in self._cells_align:
-                self.add_cell("")
+                self._add_cell("")
 
     def __check_amount_of_cells(self):
         """check if the len of data and the amount of cells is the same
@@ -563,9 +592,10 @@ class LineParser:
 class TextTables:
     def __init__(self) -> None:
         self._main_header = []
-        self._row_headers: list[OutputPart] = []
-        self._row_data: list[OutputPart] = []
-        self._parser = LineParser()
+        self._parser_header = LineParser()
+        self._parser_data = LineParser()
+        self._actual_return = []
+        self.__delete_parsed_data = False
 
     def add_header_lines(self, header_lines: list[str]):
         """add the lines of the header (not cells)"""
@@ -580,13 +610,118 @@ class TextTables:
                 self._main_header.append(header_line)
 
     def set_cell_width(self, cells_width: list[int]):
-        self._parser.set_cell_widths(cells_width)
+        self._parser_header.set_cell_widths(cells_width)
+        self._parser_data.set_cell_widths(cells_width)
+        self.set_border_bottom()
+        self.set_border_header()
+        self.set_border_normal()
+        self.set_border_special()
+        self.set_border_top()
 
     def set_cell_align(self, cells_align: list[str]):
-        self._parser.set_cell_aligns(cells_align)
+        self._parser_header.set_cell_aligns(cells_align)
+        self._parser_data.set_cell_aligns(cells_align)
+
+    def set_border_top(
+        self, draw: bool = True, name: str = None, chars: list[str] = None
+    ):
+        self.__draw_top = self.__check_bool(draw)
+        self._parser_header.set_border_chars_top_bottom(name, chars)
+        self._parser_data.set_border_chars_top_bottom(name, chars)
+        self.__hori_top_header = self._parser_header.get_border_top_bottom_advanced(
+            name
+        )
+        self.__hori_top_data = self._parser_data.get_border_top_bottom_advanced(name)
+
+    def set_border_bottom(
+        self, draw: bool = True, name: str = None, chars: list[str] = None
+    ):
+        self.__draw_bottom = self.__check_bool(draw)
+        self._parser_header.set_border_chars_top_bottom(name, chars)
+        self._parser_data.set_border_chars_top_bottom(name, chars)
+        self.__hori_bottom_header = self._parser_header.get_border_top_bottom_advanced(
+            name
+        )
+        self.__hori_bottom_data = self._parser_data.get_border_top_bottom_advanced(name)
+
+    def set_border_normal(
+        self, draw: bool = True, name: str = None, chars: list[str] = None
+    ):
+        self.__draw_normal = self.__check_bool(draw)
+        self._parser_header.set_border_chars_top_bottom(name, chars)
+        self._parser_data.set_border_chars_top_bottom(name, chars)
+        self.__hori_top_bottom_normal_header = (
+            self._parser_header.get_border_top_bottom_advanced(name)
+        )
+        self.__hori_top_bottom_normal_data = (
+            self._parser_data.get_border_top_bottom_advanced(name)
+        )
+
+    def set_border_header(
+        self, draw: bool = True, name: str = None, chars: list[str] = None
+    ):
+        self.__draw_header_h = self.__check_bool(draw)
+        self._parser_header.set_border_chars_top_bottom(name, chars)
+        self._parser_data.set_border_chars_top_bottom(name, chars)
+        self._hori_header_header = self._parser_header.get_border_top_bottom_advanced(
+            name
+        )
+        self.__hori_header_data = self._parser_data.get_border_top_bottom_advanced(name)
+
+    def set_border_special(
+        self, draw: bool = True, name: str = None, chars: list[str] = None
+    ):
+        self.__draw_special = self.__check_bool(draw)
+        self._parser_header.set_border_chars_top_bottom(name, chars)
+        self._parser_data.set_border_chars_top_bottom(name, chars)
+        self.__hori_special_header = self._parser_header.get_border_top_bottom_advanced(
+            name
+        )
+        self.__hori_special_data = self._parser_header.get_border_top_bottom_advanced(
+            name
+        )
+
+    def set_border_vertical(self, name: str, chars: list[str]):
+        self._parser_header.set_border_chars_left_right(name, chars)
+        self._parser_data.set_border_chars_left_right(name, chars)
 
     def add_row_header(self, row: list[str]):
-        self._parser.add_row(row)
+        self._parser_header.set_row(row)
+        self._create_header_row()
+
+    def _create_table_header(self):
+        pass
 
     def add_row_data(self, row: list[str]):
-        self._parser.add_row(row)
+        self._parser_data.set_row(row)
+        self._create_data_row()
+
+    def _create_data_row(self):
+        if self.__delete_parsed_data:
+            self.clear_parsed_data()
+        self._actual_return += self._parser_data.get_row_adwanced()
+        if self.__draw_normal:
+            self._actual_return += self.__hori_top_bottom_normal_data
+
+    def end_table(self):
+        self._actual_return += self.__hori_bottom_data
+
+    def _create_header_row(self):
+        if self.__delete_parsed_data:
+            self.clear_parsed_data()
+        if self.__draw_top:
+            self._actual_return += self.__hori_top_header
+        self._actual_return += self._parser_header.get_row_adwanced()
+        if self.__draw_header_h:
+            self._actual_return += self.__hori_bottom_header
+
+    def get_adwanced(self):
+        return self._actual_return
+
+    def clear_parsed_data(self):
+        self._actual_return = []
+
+    def __check_bool(self, x):
+        if not isinstance(x, bool):
+            raise Exception
+        return x

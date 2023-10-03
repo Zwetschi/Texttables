@@ -1,7 +1,10 @@
-from Texttables_2 import LineParser
+from Texttables_2 import LineParser, TextTables
 import tkinter
 import time
+from colorama import Fore, Back, Style
+import colorama
 
+colorama.init(autoreset=True)
 p = print
 
 
@@ -37,7 +40,7 @@ class Example:
         p1 = LineParser()
         p1.set_cell_aligns("clrr")
         p1.set_cell_widths([20, 20, 10, 30])
-        p1.add_row(data)
+        p1.set_row(data)
         result = p1.get_row_adwanced()
         for part in result:
             try:
@@ -55,27 +58,6 @@ class Example:
 
 
 def example_parser_1():
-    header = [("Header1", "blue"), "Header2.0\nHeader2.1", "Header3"]
-    data = [
-        ["Franz1", 563, "Nothing"],
-        ["Johannes", "44", 55],
-        ["Volker", 2.7, "idk"],
-    ]
-    parser = LineParser(False)
-    parser.set_cell_aligns("rrc")
-    parser.set_cell_widths([15, 20, 8])
-    parser.add_row(header)
-    print(parser.get_border_top_bottom("utf_8_top_1"))
-    print(parser.get_row())
-    print(parser.get_border_top_bottom("utf_8_parting_1"))
-    for row in data:
-        parser.add_row(row)
-        print(parser.get_row())
-
-    print(parser.get_border_top_bottom("utf_8_bottom_1"))
-
-
-def example_parser_2():
     header = ["Example2", "Header2.0\nHeader2.1", "Header3"]
     data = [
         ["Franz1", 563, "Nothing"],
@@ -85,20 +67,19 @@ def example_parser_2():
     parser = LineParser()
     parser.set_cell_aligns("rrc")
     parser.set_cell_widths([15, 20, 23])
-    parser.add_row(header)
-    parser.set_line_align_indent(5)
+    parser.set_row(header)
     print(parser.get_border_top_bottom("utf_8_top_1"))
     print(parser.get_row())
     print(parser.get_border_top_bottom("utf_8_parting_1"))
     for row in data:
-        parser.add_row(row)
+        parser.set_row(row)
         print(parser.get_row())
 
     print(parser.get_border_top_bottom("utf_8_bottom_1"))
 
 
-def example_parser_3():
-    header = ["Header1", "Header2.0\nHeader2.1", "Header3"]
+def example_parser_2():
+    header = [("Header1", "blue"), "Header2.0\nHeader2.1", "Header3"]
     data = [
         ["Franz1", 563, "Nothing", "Joke"],
         ["Johannes", "44", 55, "Rope"],
@@ -108,8 +89,8 @@ def example_parser_3():
     parser_header.set_cell_aligns("rrc")
     parser_header.set_cols_distance_from_left([15, 30, 70])
     parser_header.set_cell_text_to_border("  ", "  ")
-    for cell in header:
-        parser_header.add_cell(cell)
+    parser_header.set_line_align_indent(5)
+    parser_header.set_row(header)
 
     print(parser_header.get_border_top_bottom("000"))
     print(parser_header.get_row())
@@ -118,17 +99,35 @@ def example_parser_3():
     parser_data.set_cell_aligns("clcr")
     parser_data.set_cols_distance_from_left([15, 30, 50, 70])
     parser_data.set_border_chars_top_bottom("162", "╞═╪═╪═╤═╡")
+    parser_data.set_line_align_indent(5)
 
     print(parser_data.get_border_top_bottom("162"))
     for row in data:
-        for cell in row:
-            parser_data.add_cell(cell)
+        parser_data.set_row(row)
         print(parser_data.get_row())
 
         parser_data.clear_data()
     print(parser_data.get_border_top_bottom("111"))
 
 
-example_parser_1()
+def example_table_1():
+    header = [("Header1", "blue"), "Header2.0\nHeader2.1", "Header3", "header4"]
+    data = [
+        ["Franz1", 563, "Nothing", "Joke"],
+        ["Johannes", "44", 55, "Rope"],
+        ["Volker", 2.7, "idk", "Ok"],
+    ]
+    texttable = TextTables()
+    texttable.set_cell_width([20, 20, 20, 20])
+    texttable.set_cell_align("crlr")
+    texttable.add_row_header(header)
+    for row in data:
+        texttable.add_row_data(row)
+    texttable.end_table()
+    for chunk in texttable.get_adwanced():
+        print(chunk)
 
+
+# example_parser_1()
+example_table_1()
 # Example()
