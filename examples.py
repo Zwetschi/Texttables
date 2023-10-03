@@ -111,11 +111,16 @@ def example_parser_2():
 
 
 def example_table_1():
-    header = [("Header1", "blue"), "Header2.0\nHeader2.1", "Header3", "header4"]
+    header = [
+        ("Header1", "blue"),
+        "Header2.0\nHeader2.1",
+        ("Header3", "red"),
+        "header4",
+    ]
     data = [
-        ["Franz1", 563, "Nothing", "Joke"],
+        ["Franz1", 563, "Nothing", ("Joke", "green")],
         ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", "Ok"],
+        ["Volker", 2.7, "idk", ("Ok", "green")],
     ]
     texttable = TextTables()
     texttable.set_cell_width([20, 20, 20, 20])
@@ -123,8 +128,8 @@ def example_table_1():
     texttable.add_row_header(header)
     for row in data:
         texttable.add_row_data(row)
-    texttable.end_table()
-    for chunk in texttable.get_adwanced():
+    table = texttable.get_complete()
+    for chunk in table:
         print(chunk)
 
 

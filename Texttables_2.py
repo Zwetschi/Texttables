@@ -319,7 +319,7 @@ class LineParser:
         """_summary_
 
         Args:
-            boarder_chars_name (str, optional): top_1, bottom_1, parting_1, parting_2.
+            boarder_chars_name (str, optional): strg+f _standart_border_chars_top_bottom or try any string
             Defaults to None. If None always the last name is used which was set
 
         Returns:
@@ -331,7 +331,7 @@ class LineParser:
         """
 
         Args:
-            boarder_chars_name (str, optional): top_1, bottom_1, parting_1, parting_2.
+            boarder_chars_name (str, optional): strg+f _standart_border_chars_top_bottom or try any string
             Defaults to None.
 
             if None always the last name is used which was set
@@ -347,6 +347,7 @@ class LineParser:
         self, boarder_chars_name: str = None
     ) -> list[OutputChunk]:
         """NOTE mehtod is a iterable"""
+        # implementet to have the option parse tables on left in future
         self.__check_row_for_data()
         self.__check_amount_of_cells()
         self.__parse_step_1_fill_up()
@@ -358,7 +359,7 @@ class LineParser:
         """_summary_
 
         Args:
-            boarder_chars_name (str, optional): border_1.
+            boarder_chars_name (str, optional): try any string.
             Defaults to None. If None always the last name is used which was set
 
         Returns:
@@ -595,7 +596,9 @@ class TextTables:
         self._parser_header = LineParser()
         self._parser_data = LineParser()
         self._actual_return = []
-        self.__delete_parsed_data = False
+        self.__row_counter = 0
+        self.__header_rows = []
+        self.__data_rows = []
 
     def add_header_lines(self, header_lines: list[str]):
         """add the lines of the header (not cells)"""
@@ -612,116 +615,46 @@ class TextTables:
     def set_cell_width(self, cells_width: list[int]):
         self._parser_header.set_cell_widths(cells_width)
         self._parser_data.set_cell_widths(cells_width)
-        self.set_border_bottom()
-        self.set_border_header()
-        self.set_border_normal()
-        self.set_border_special()
-        self.set_border_top()
 
     def set_cell_align(self, cells_align: list[str]):
         self._parser_header.set_cell_aligns(cells_align)
         self._parser_data.set_cell_aligns(cells_align)
 
-    def set_border_top(
-        self, draw: bool = True, name: str = None, chars: list[str] = None
-    ):
-        self.__draw_top = self.__check_bool(draw)
-        self._parser_header.set_border_chars_top_bottom(name, chars)
-        self._parser_data.set_border_chars_top_bottom(name, chars)
-        self.__hori_top_header = self._parser_header.get_border_top_bottom_advanced(
-            name
-        )
-        self.__hori_top_data = self._parser_data.get_border_top_bottom_advanced(name)
-
-    def set_border_bottom(
-        self, draw: bool = True, name: str = None, chars: list[str] = None
-    ):
-        self.__draw_bottom = self.__check_bool(draw)
-        self._parser_header.set_border_chars_top_bottom(name, chars)
-        self._parser_data.set_border_chars_top_bottom(name, chars)
-        self.__hori_bottom_header = self._parser_header.get_border_top_bottom_advanced(
-            name
-        )
-        self.__hori_bottom_data = self._parser_data.get_border_top_bottom_advanced(name)
-
-    def set_border_normal(
-        self, draw: bool = True, name: str = None, chars: list[str] = None
-    ):
-        self.__draw_normal = self.__check_bool(draw)
-        self._parser_header.set_border_chars_top_bottom(name, chars)
-        self._parser_data.set_border_chars_top_bottom(name, chars)
-        self.__hori_top_bottom_normal_header = (
-            self._parser_header.get_border_top_bottom_advanced(name)
-        )
-        self.__hori_top_bottom_normal_data = (
-            self._parser_data.get_border_top_bottom_advanced(name)
-        )
-
-    def set_border_header(
-        self, draw: bool = True, name: str = None, chars: list[str] = None
-    ):
-        self.__draw_header_h = self.__check_bool(draw)
-        self._parser_header.set_border_chars_top_bottom(name, chars)
-        self._parser_data.set_border_chars_top_bottom(name, chars)
-        self._hori_header_header = self._parser_header.get_border_top_bottom_advanced(
-            name
-        )
-        self.__hori_header_data = self._parser_data.get_border_top_bottom_advanced(name)
-
-    def set_border_special(
-        self, draw: bool = True, name: str = None, chars: list[str] = None
-    ):
-        self.__draw_special = self.__check_bool(draw)
-        self._parser_header.set_border_chars_top_bottom(name, chars)
-        self._parser_data.set_border_chars_top_bottom(name, chars)
-        self.__hori_special_header = self._parser_header.get_border_top_bottom_advanced(
-            name
-        )
-        self.__hori_special_data = self._parser_header.get_border_top_bottom_advanced(
-            name
-        )
-
-    def set_border_vertical(self, name: str, chars: list[str]):
-        self._parser_header.set_border_chars_left_right(name, chars)
-        self._parser_data.set_border_chars_left_right(name, chars)
-
     def add_row_header(self, row: list[str]):
         self._parser_header.set_row(row)
-        self._create_header_row()
-
-    def _create_table_header(self):
-        pass
+        self.__header_rows.append(row)
 
     def add_row_data(self, row: list[str]):
         self._parser_data.set_row(row)
-        self._create_data_row()
+        self.__data_rows.append(row)
 
-    def _create_data_row(self):
-        if self.__delete_parsed_data:
-            self.clear_parsed_data()
-        self._actual_return += self._parser_data.get_row_adwanced()
-        if self.__draw_normal:
-            self._actual_return += self.__hori_top_bottom_normal_data
+    def get_row_header(self):
+        # fmt:off
+        result= self._parser_header.get_border_top_bottom_advanced("utf_8_top_1")
+        result += self._parser_header.get_row_adwanced("utf_8_border_1")
+        result += self._parser_header.get_border_top_bottom_advanced("utf_8_parting_1")
+        # fmt:on
+        return result
 
-    def end_table(self):
-        self._actual_return += self.__hori_bottom_data
+    def get_row_data(self):
+        # fmt:off
+        result = self._parser_data.get_row_adwanced("utf_8_border_1")
+        # fmt:on
+        return result
 
-    def _create_header_row(self):
-        if self.__delete_parsed_data:
-            self.clear_parsed_data()
-        if self.__draw_top:
-            self._actual_return += self.__hori_top_header
-        self._actual_return += self._parser_header.get_row_adwanced()
-        if self.__draw_header_h:
-            self._actual_return += self.__hori_bottom_header
+    def get_table_end(self):
+        return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
 
-    def get_adwanced(self):
-        return self._actual_return
+    def get_complete(self):
+        result = []
+        for header_row in self.__header_rows:
+            self._parser_header.set_row(header_row)
+            result += self.get_row_header()
+        for data_row in self.__data_rows:
+            self._parser_data.set_row(data_row)
+            result += self.get_row_data()
+        result += self.get_table_end()
+        return result
 
-    def clear_parsed_data(self):
-        self._actual_return = []
-
-    def __check_bool(self, x):
-        if not isinstance(x, bool):
-            raise Exception
-        return x
+    def _create_table_header(self):
+        pass
