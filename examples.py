@@ -1,4 +1,4 @@
-from Texttables_2 import LineParser, TextTables
+from Texttables_2 import LineParser, TextTable, Texttables
 import tkinter
 import time
 from colorama import Fore, Back, Style
@@ -59,22 +59,23 @@ class Example:
 
 
 def example_parser_1():
-    header = ["Example2", "Header2.0\nHeader2.1", "Header3"]
+    header = ["Example2", "Header2.0\nHeader2.1\nhghg\njhuz\njzhgg\nhghk", "Header3"]
     data = [
         ["Franz1", 563, "Nothing"],
         ["Johannes", "44", 55],
         ["Volker", 2.7, "idk"],
     ]
     parser = LineParser()
-    parser.set_cell_aligns("rrc")
+    parser.set_cell_aligns("crc")
     parser.set_cell_widths([15, 20, 23])
+    parser.set_cell_valign("mtb")
     parser.set_row(header)
-    print(parser.get_border_top_bottom("utf_8_top_1"))
-    print(parser.get_row())
-    print(parser.get_border_top_bottom("utf_8_parting_1"))
+    print(parser.get_border_top_bottom("utf_8_top_1"), end="")
+    print(parser.get_row(), end="")
+    print(parser.get_border_top_bottom("utf_8_parting_1"), end="")
     for row in data:
         parser.set_row(row)
-        print(parser.get_row())
+        print(parser.get_row(), end="")
 
     print(parser.get_border_top_bottom("utf_8_bottom_1"))
 
@@ -90,7 +91,7 @@ def example_parser_2():
     parser_header.set_cell_aligns("rrc")
     parser_header.set_cols_distance_from_left([15, 30, 70])
     parser_header.set_cell_text_to_border("  ", "  ")
-    parser_header.set_line_align_indent(5)
+    parser_header.set_line_indent(5)
     parser_header.set_row(header)
 
     print(parser_header.get_border_top_bottom("000"))
@@ -100,7 +101,7 @@ def example_parser_2():
     parser_data.set_cell_aligns("clcr")
     parser_data.set_cols_distance_from_left([15, 30, 50, 70])
     parser_data.set_border_chars_top_bottom("162", "╞═╪═╪═╤═╡")
-    parser_data.set_line_align_indent(5)
+    parser_data.set_line_indent(5)
 
     print(parser_data.get_border_top_bottom("162"))
     for row in data:
@@ -111,34 +112,80 @@ def example_parser_2():
     print(parser_data.get_border_top_bottom("111"))
 
 
-def example_table_1():
+def example_texttable_1():
     header = [
-        ("Header1\n756h", "blue"),
+        ("Header1\n756h", Fore.BLUE),
         "Header2.0\nHeader2.1",
-        ("Header3", "red"),
+        ("Header3", Fore.RED),
         "header4",
     ]
     data = [
-        ["Franz1", 563, "Nothing", ("Joke", "green")],
+        ["Franz1", 563, "Nothing", ("Joke", Fore.RED)],
         ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", ("Ok", "green")],
+        ["Volker", 2.7, "idk", ("Ok", Fore.GREEN)],
+        ["Franz1", 563, "Nothing", ("Joke", Fore.BLUE)],
+        ["Johannes", "44", 55, "Rope"],
+        [("Volker", Fore.MAGENTA), 2.7, "idk", "servus"],
+        ["Franz1", 563, "Nothing", ("Joke",)],
+        ["Johannes", "44", 55, "Rope"],
+        ["Volker", 2.7, "idk", ("Ok", Fore.YELLOW)],
     ]
-    texttable = TextTables()
-    texttable.set_cell_width([20, 20, 20, 20])
-    texttable.set_cell_align("crlr")
+    texttable = TextTable()
+    texttable.set_cols_distance_from_left([19, 35, 49, 60])
+    texttable.set_cell_align_header("cclr")
+    texttable.set_cell_align_data("clrc")
+    texttable.set_cell_valign("bbbb")
     texttable.add_row_header(header)
+    texttable.set_special_horizontal_border([3, 4, 7])
     for row in data:
         texttable.add_row_data(row)
     table = texttable.get_complete()
     for chunk in table:
-        # print(chunk.get_chunk(), len(chunk.args), chunk.args)
-        # print(chunk.args)
-        if "greeen" in chunk.get_args():
-            print(Fore.GREEN, chunk.get_chunk(), end="")
-        else:
-            print(chunk.get_chunk(), end="")
+        try:
+            color = chunk.args[0]
+        except IndexError:
+            color = Fore.BLACK
+        print(color + str(chunk), end="")
+        # else:
+        #     print(chunk.get_chunk(), end="")
 
 
-# example_parser_1()
-example_table_1()
+def example_texttables_1():
+    header = [
+        ("Header1\n756h", Fore.BLUE),
+        "Header2.0\nHeader2.1",
+        ("Header3", Fore.RED),
+        "header4",
+    ]
+    data = [
+        ["Franz1", 563, "Nothing", ("Joke", Fore.RED)],
+        ["Johannes", "44", 55, "Rope"],
+        ["Volker", 2.7, "idk", ("Ok", Fore.GREEN)],
+        ["Franz1", 563, "Nothing", ("Joke", Fore.BLUE)],
+        ["Johannes", "44", 55, "Rope"],
+        [("Volker", Fore.MAGENTA), 2.7, "idk", "servus"],
+        ["Franz1", 563, "Nothing", ("Joke",)],
+        ["Johannes", "44", 55, "Rope"],
+        ["Volker", 2.7, "idk", ("Ok", Fore.YELLOW)],
+    ]
+    texttables = Texttables()
+    texttables.set_cols_distance_from_left([19, 35, 49, 60])
+    texttables.set_cell_align_header("cclr")
+    texttables.set_cell_align_data("clrc")
+    texttables.add_row_header(header)
+    texttables.set_special_horizontal_border([3, 4, 7])
+    for row in data:
+        texttables.add_row_data(row)
+    table = texttables.get_complete()
+    for chunk in table:
+        try:
+            color = chunk.args[0]
+        except IndexError:
+            color = Fore.BLACK
+        print(color + str(chunk), end="")
+
+
+example_parser_1()
+# example_texttable_1()
+# print(Fore.GREEN + "hallo")
 # Example()
