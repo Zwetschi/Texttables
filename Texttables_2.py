@@ -555,19 +555,17 @@ class LineParser:
             return False
         if isinstance(chars, str):
             chars = list(chars)
-        try:
-            if len(chars) != check_len and len(chars) != func(len(self._cells_width)):
-                raise TypeError(
-                    f"The legth of of boarder chars must be {check_len} by standart\n"
-                    + f"Wrong chars: {chars}\n"
-                    + "In a special case there can be chosen a boarder char for every single place in cell.\n"
-                    + f"The table len is {len(self._cells_width)} cells, so there have to be {func(len(self._cells_width))} boarder chars, but there are {len(chars)}"
-                )
-        except AttributeError:
-            # cells widht is not set
+        if len(self._cells_width) == 0:
             raise AttributeError(
                 "Before set the border chars, set the cell widhts by calling "
                 + f"'{self.set_cell_widths.__name__}' or '{self.set_border_chars_left_right.__name__}'"
+            )
+        if len(chars) != check_len and len(chars) != func(len(self._cells_width)):
+            raise TypeError(
+                f"The legth of of boarder chars must be {check_len} by standart\n"
+                + f"Wrong chars: {chars}\n"
+                + "In a special case there can be chosen a boarder char for every single place in cell.\n"
+                + f"The table len is {len(self._cells_width)} cells, so there have to be {func(len(self._cells_width))} boarder chars, but there are {len(chars)}"
             )
         return chars
 
