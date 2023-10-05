@@ -93,6 +93,14 @@ class _BorderChars:
 
 
 class OutputChunk:
+    """ "frame",
+    "text",
+    "end_of_line",
+    "cell_align_right",
+    "cell_align_left",
+    "indent",
+    "white_space","""
+
     TOKENS = [
         "frame",
         "text",
@@ -103,10 +111,11 @@ class OutputChunk:
         "white_space",
     ]
 
-    def __init__(self, chunk: str, token: str, *args) -> None:
+    def __init__(self, chunk: str, token: str, *args, **kwargs) -> None:
         self.__chunk = chunk
         self.__set_token(token)
         self.args = args
+        self.kwargs = kwargs
 
     def get_chunk(self):
         return self.__chunk
@@ -435,11 +444,21 @@ class LineParser:
         spaces_align = widh - len(line_text) - self._cell_distance_text.sum
         if align in ("r", "right"):
             result.append(
-                OutputChunk(spaces_align * " " + line_text, "text", *_actual_cell.args)
+                OutputChunk(
+                    spaces_align * " " + line_text,
+                    "text",
+                    *_actual_cell.args,
+                    **_actual_cell.kwargs,
+                )
             )
         elif align in ("l", "left"):
             result.append(
-                OutputChunk(line_text + spaces_align * " ", "text", *_actual_cell.args)
+                OutputChunk(
+                    line_text + spaces_align * " ",
+                    "text",
+                    *_actual_cell.args,
+                    **_actual_cell.kwargs,
+                )
             )
         elif align in ("c", "center"):
             center_left = (spaces_align + 1) // 2 * " "
@@ -449,6 +468,7 @@ class LineParser:
                     center_left + line_text + center_right,
                     "text",
                     *_actual_cell.args,
+                    **_actual_cell.kwargs,
                 )
             )
         else:
