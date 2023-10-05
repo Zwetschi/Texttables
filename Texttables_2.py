@@ -1,87 +1,13 @@
 from typing import NamedTuple
 
 
-class CellWrapper:
-    """
-    Check and modiefie the input
-    ┌──────────────────────┬────────────────────────┐
-    │          CellWrapper │        CellWrapper     │
-    │                      │                        │
-    └──────────────────────┴────────────────────────┘
-    """
-
-    def __init__(self, text: str, *args) -> None:
-        self.args = args
-        self.cell_text = []
-        self.__set_cell_text(text)
-
-    def get_line_amount(self):
-        return len(self._cell_text_input)
-
-    def get_line(self, position: int = None):
-        if position is None:
-            return self.cell_text
-        return self.cell_text[position]
-
-    def __set_cell_text(self, text: str):
-        text = self.__check_cell_input(text)
-        self._cell_text_input: list[str] = text.split("\n")
-
-    def __check_cell_input(self, cell_text) -> str:
-        if not isinstance(cell_text, (str, float, int)):
-            raise TypeError(
-                "The input must be str, float or int.\n"
-                + f"the input is: {cell_text}"
-                + "if you want to input an objekt you can use *args in add_cell"
-            )
-        elif isinstance(cell_text, (float, int)):
-            return str(cell_text)
-        return cell_text
-
-
-class CellTextDistance(NamedTuple):
+class _CellTextDistance(NamedTuple):
     left: str
     right: str
     sum: int
 
 
-class OutputChunk:
-    TOKENS = [
-        "frame",
-        "text",
-        "end_of_line",
-        "cell_align_right",
-        "cell_align_left",
-        "indent",
-        "white_space",
-    ]
-
-    def __init__(self, chunk: str, token: str, *args) -> None:
-        self.__chunk = chunk
-        self.__set_token(token)
-        self.args = args
-
-    def get_chunk(self):
-        return self.__chunk
-
-    def get_token(self) -> str:
-        """_summary_
-
-        Returns:
-            str: "frame", "text", "end_of_line", "end_of_row"
-        """
-        return self.__token
-
-    def __set_token(self, token):
-        if token not in self.TOKENS:
-            raise KeyError(f"token must be in {self.TOKENS}")
-        self.__token = token
-
-    def __repr__(self) -> str:
-        return self.__chunk
-
-
-class BorderChars:
+class _BorderChars:
     CHARS_UNICODE_1 = "─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬"
     CHARS_UNICODE_2 = "─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧"
     CHARS_UNICODE_3 = "┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═"
@@ -166,11 +92,87 @@ class BorderChars:
             self._border_chars_left_right[key] = value
 
 
+class OutputChunk:
+    TOKENS = [
+        "frame",
+        "text",
+        "end_of_line",
+        "cell_align_right",
+        "cell_align_left",
+        "indent",
+        "white_space",
+    ]
+
+    def __init__(self, chunk: str, token: str, *args) -> None:
+        self.__chunk = chunk
+        self.__set_token(token)
+        self.args = args
+
+    def get_chunk(self):
+        return self.__chunk
+
+    def get_token(self) -> str:
+        """_summary_
+
+        Returns:
+            str: "frame", "text", "end_of_line", "end_of_row"
+        """
+        return self.__token
+
+    def __set_token(self, token):
+        if token not in self.TOKENS:
+            raise KeyError(f"token must be in {self.TOKENS}")
+        self.__token = token
+
+    def __repr__(self) -> str:
+        return self.__chunk
+
+
+class InputCell:
+    """
+    Check and modiefie the input
+    ┌──────────────────────┬────────────────────────┐
+    │          CellWrapper │        CellWrapper     │
+    │                      │                        │
+    └──────────────────────┴────────────────────────┘
+    """
+
+    def __init__(self, text: str, *args, **kwargs) -> None:
+        self.args = args
+        self.kwargs = kwargs
+        self.cell_text = []  # modiefied with valign
+        self._cell_text_input = []  # originial input
+        self.__set_cell_text(text)
+
+    def get_line(self, position: int = None):
+        if position is None:
+            return self.cell_text
+        return self.cell_text[position]
+
+    def get_line_amount(self):
+        return len(self._cell_text_input)
+
+    def __set_cell_text(self, text: str):
+        text = self.__check_cell_input(text)
+        self._cell_text_input: list[str] = text.split("\n")
+
+    def __check_cell_input(self, cell_text) -> str:
+        if not isinstance(cell_text, (str, float, int)):
+            raise TypeError(
+                "The input must be str, float or int.\n"
+                + f"the input is: {cell_text}"
+                + "if you want to input an objekt you can use *args in add_cell"
+            )
+        elif isinstance(cell_text, (float, int)):
+            return str(cell_text)
+        return cell_text
+
+
 class LineParser:
     def __init__(self, rise_parsing_errors=False, end_of_line=True) -> None:
-        self._charsets = BorderChars()
-        self._row: list[CellWrapper] = []
-        self.__line_stack_sizes = []
+        self._charsets = _BorderChars()
+        self._input_row: list[InputCell] = []
+        self.__lines_in_cells = []  # how many lines are in every single cell
         self._set_rise_parsing_errors(rise_parsing_errors)
         self._set_end_of_line(end_of_line)
         self.set_cell_text_to_border()
@@ -290,37 +292,62 @@ class LineParser:
         if not isinstance(left, str) or not isinstance(left, str):
             raise ValueError(f"left and right must be string!")
 
-        self._cell_distance_text = CellTextDistance(left, right, len(left) + len(right))
+        self._cell_distance_text = _CellTextDistance(
+            left, right, len(left) + len(right)
+        )
 
     def _set_rise_parsing_errors(self, x: bool):
+        """hide parsing error to get a table with to smal cells instead an error
+
+        ugly is better then nothing
+
+        Args:
+            x (bool): _description_
+
+        Raises:
+            Exception: _description_
+        """
         if not isinstance(x, bool):
             raise Exception(f"Must be bool")
         self._rise_parsing_errors = x
 
     def _set_end_of_line(self, x: bool):
+        """newline at the end of line
+
+        Args:
+            x (bool): _description_
+
+        Raises:
+            Exception: _description_
+        """
         if not isinstance(x, bool):
             raise Exception(f"Must be bool")
         self._end_of_line = x
 
-    def _add_cell(self, cell_text: str, *args):
+    def _add_cell(self, input_cell: str | InputCell, *args, **kwargs):
         """add a cell to row (dount forget do call clear_row when finished)
 
         kwargs is to set outher attributes like color
         this attributes is on kwargs["your_attrubure"] on the output objects
         (not every output wrapper has this attribut!)
         """
-        cell_wrapper = CellWrapper(cell_text, *args)
-        self.__line_stack_sizes.append(cell_wrapper.get_line_amount())
-        self._row.append(cell_wrapper)
+        if isinstance(input_cell, InputCell):
+            self.__lines_in_cells.append(input_cell.get_line_amount())
+            self._input_row.append(input_cell)
+        elif isinstance(input_cell, (str, int, float)):
+            cell_wrapper = InputCell(input_cell, *args, **kwargs)
+            self.__lines_in_cells.append(cell_wrapper.get_line_amount())
+            self._input_row.append(cell_wrapper)
+        else:
+            raise Exception(
+                f"Input must me string or {InputCell}, input is {input_cell}"
+            )
 
-    def set_row(self, row: list[str]):
+    def set_row(self, row: list[str] | list[InputCell]):
         """add a new row and delete the old data"""
-        self.clear_data()
+        self.clear_raw_data()
         for cell in row:
-            if isinstance(cell, (tuple, list)):
-                self._add_cell(*cell)
-            else:
-                self._add_cell(cell)
+            self._add_cell(cell)
 
     def get_border_top_bottom_advanced(
         self, boarder_chars_name: str = None
@@ -359,7 +386,7 @@ class LineParser:
         self.__check_amount_of_cells()
         self.__parse_step_1_fill_up()
         # for evry line in the cells iterarte over all cells and try to get the line
-        for line_counter in range(max(self.__line_stack_sizes)):
+        for line_counter in range(max(self.__lines_in_cells)):
             yield self.__parse_line_with_text(line_counter, boarder_chars_name)
 
     def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputChunk]:
@@ -392,16 +419,17 @@ class LineParser:
             [str(part) for part in self.get_row_adwanced(boarder_chars_name)]
         )
 
-    def clear_data(self):
-        self._row = []
-        self.__line_stack_sizes = []
+    def clear_raw_data(self):
+        """delete the last raw input data (not parsed data)"""
+        self._input_row = []
+        self.__lines_in_cells = []
 
     # -----------------------------------------------------------------------------------------------------
     # Parser
     # -----------------------------------------------------------------------------------------------------
 
     def __parse_text_inside_cell(
-        self, line_text: str, widh: int, align, _actual_cell: CellWrapper
+        self, line_text: str, widh: int, align, _actual_cell: InputCell
     ) -> list[OutputChunk]:
         result = [OutputChunk(self._cell_distance_text.left, "cell_align_left")]
         spaces_align = widh - len(line_text) - self._cell_distance_text.sum
@@ -458,7 +486,7 @@ class LineParser:
         ]
 
         for _actual_cell, width, align, border_char in zip(
-            self._row, self._cells_width, self._cells_align, border_chars[1:]
+            self._input_row, self._cells_width, self._cells_align, border_chars[1:]
         ):
             cell_text_line = _actual_cell.get_line(line_counter)
             self.__check_text_and_cell_width(cell_text_line, width)
@@ -477,9 +505,9 @@ class LineParser:
 
         (fill up)"""
 
-        for actual_cell, valign in zip(self._row, self._cells_valign):
+        for actual_cell, valign in zip(self._input_row, self._cells_valign):
             actual_cell.cell_text = actual_cell._cell_text_input.copy()
-            diff = max(self.__line_stack_sizes) - actual_cell.get_line_amount()
+            diff = max(self.__lines_in_cells) - actual_cell.get_line_amount()
             if valign == "t":
                 for i in range(diff):
                     actual_cell.cell_text.append("")
@@ -587,26 +615,67 @@ class LineParser:
         Raises:
             IndexError: _description_
         """
-        if len(self._row) == 0:
+        if len(self._input_row) == 0:
             raise Exception("There is no row to parse")
         if not (
-            len(self._row)
+            len(self._input_row)
             == len(self._cells_width)
             == len(self._cells_align)
             == len(self._cells_valign)
         ):
             raise IndexError(
                 "The lenght of data cells, cell width and cell align ist not the same!\n"
-                + f"data: (len {len(self._row)}) {[x.get_line() for x in self._row]}\n"
+                + f"data: (len {len(self._input_row)}) {[x.get_line() for x in self._input_row]}\n"
                 + f"cells width: (len {len(self._cells_width)}) {self._cells_width}\n"
                 + f"cells align: (len {len(self._cells_align)}) {self._cells_align}\n"
                 + f"cells valign: (len {len(self._cells_valign)}) {self._cells_valign}\n"
             )
 
 
+class TextTable_Styles:
+    def __init__(self) -> None:
+        # 1. a partling line between rows
+        # 2  only parting between header and table
+        # ... ===== ===== =======
+        # ... A     B     A and B
+        # ... ===== ===== =======
+        # ... False False False
+        # ... True  False False
+        # ... False True  False
+        # ... True  True  True
+        # ... ===== ===== =======
+
+        # foo    bar    baz
+        # ====== ====== ======
+        # data 1 data 2 data 3
+        # data 4 data 5 data 6
+
+        # +########+########+########+
+        # |header 1|header 2|header 3|
+        # +========+========+========+
+        # |data 1  |  data 2| data 3 |
+        # +--------+--------+--------+
+        # |data 4  |  data 5| data 6 |
+        # +________+________+________+
+
+        #         '|header 1  |  header 2| header 3 |\n'
+        # ...     '+==========+==========+==========+\n'
+        # ...     '|data 1    |    data 2|  data 3  |\n'
+        # ...     '+----------+----------+----------+\n'
+        # ...     '|data 4    |    data 5|  data 6  |\n'
+        # ...     '+__________+__________+__________+\n'
+        pass
+
+
 class TextTable_Fast:
     def __init__(self) -> None:
         pass
+
+    # first row i iterpreted as header, (bool)
+    # add the complete table (with header) in ine list
+    # and get back the string. only string
+    # u can use fixe styles ()
+    # auto align center, auto cell widt max (iterate over the table on setting)
 
 
 class TextTable:

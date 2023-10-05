@@ -1,4 +1,4 @@
-from Texttables_2 import LineParser, TextTable, Texttables
+from Texttables_2 import LineParser, TextTable, Texttables, InputCell
 import tkinter
 import time
 from colorama import Fore, Back, Style
@@ -59,7 +59,11 @@ class Example:
 
 
 def example_parser_1():
-    header = ["Example2", "Header2.0\nHeader2.1\nhghg\njhuz\njzhgg\nhghk", "Header3"]
+    header = [
+        InputCell("Example", Fore.RED),
+        "Header2.0\nHeader2.1\nhghg\njhuz\njzhgg\nhghk",
+        "Header3",
+    ]
     data = [
         ["Franz1", 563, "Nothing"],
         ["Johannes", "44", 55],
@@ -108,27 +112,27 @@ def example_parser_2():
         parser_data.set_row(row)
         print(parser_data.get_row())
 
-        parser_data.clear_data()
+        parser_data.clear_raw_data()
     print(parser_data.get_border_top_bottom("111"))
 
 
 def example_texttable_1():
     header = [
-        ("Header1\n756h", Fore.BLUE),
+        InputCell("Header1\n756h", Fore.BLUE),
         "Header2.0\nHeader2.1",
-        ("Header3", Fore.RED),
+        InputCell("Header3", Fore.RED),
         "header4",
     ]
     data = [
-        ["Franz1", 563, "Nothing", ("Joke", Fore.RED)],
+        ["Franz1", 563, "Nothing", InputCell("Joke", Fore.RED)],
         ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", ("Ok", Fore.GREEN)],
-        ["Franz1", 563, "Nothing", ("Joke", Fore.BLUE)],
+        ["Volker", 2.7, "idk", InputCell("Ok", Fore.GREEN)],
+        ["Franz1", 563, "Nothing", InputCell("Joke", Fore.BLUE)],
         ["Johannes", "44", 55, "Rope"],
-        [("Volker", Fore.MAGENTA), 2.7, "idk", "servus"],
-        ["Franz1", 563, "Nothing", ("Joke",)],
+        [InputCell("Volker", Fore.MAGENTA), 2.7, "idk", "servus"],
+        ["Franz1", 563, "Nothing", InputCell("Joke")],
         ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", ("Ok", Fore.YELLOW)],
+        ["Volker", 2.7, "idk", InputCell("Ok", Fore.YELLOW)],
     ]
     texttable = TextTable()
     texttable.set_cols_distance_from_left([19, 35, 49, 60])
@@ -186,6 +190,6 @@ def example_texttables_1():
 
 
 example_parser_1()
-# example_texttable_1()
+example_texttable_1()
 # print(Fore.GREEN + "hallo")
 # Example()
