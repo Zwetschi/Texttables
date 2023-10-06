@@ -30,15 +30,22 @@ class _BorderChars:
             "utf_8_parting_2": ["├", "─", "┼", "┤"],
             "utf_8_parting_3": ["├", " ", "┼", "┤"],
             "utf_8_parting_4": ["│", " ", "│", "│"],
-            "ascii_top_1": ["+", "-", "+", "+"],
-            "ascii_bottom_1": ["+", "_", "+", "+"],
-            "ascii_bottom_2": ["+", "=", "+", "+"],
+            "ascii_parting_1": ["+", "-", "+", "+"],
+            "ascii_parting_2": ["+", "=", "+", "+"],
+            "ascii_parting_3": ["+", "_", "+", "+"],
+            "ascii_parting_4": ["|", "-", "|", "|"],
+            "ascii_parting_5": [" ", "-", "   ", " "],
+            "ascii_parting_6": [" ", "-", "+", " "],
+            "ascii_parting_7": ["|", "-", "+", "|"],
+            "ascii_parting_8": [" ", "=", "  ", " "],
         }
 
         self._standart_border_chars_left_right = {
             "utf_8_border_1": ["│", "│", "│"],
             "ascii_border_1": ["|", "|", "|"],
-            "empty_border": [" ", " ", " "],
+            "ascii_border_2": [" ", "|", " "],
+            "ascii_border_3": [" ", "   ", " "],
+            "ascii_border_4": [" ", "  ", " "],
         }
         self._init_alternative_keys()
 
@@ -161,6 +168,9 @@ class InputCell:
     def get_line_amount(self):
         return len(self._cell_text_input)
 
+    def get_max_width(self):
+        return max([len(x) for x in self._cell_text_input])
+
     def __set_cell_text(self, text: str):
         text = self.__check_cell_input(text)
         self._cell_text_input: list[str] = text.split("\n")
@@ -181,7 +191,6 @@ class LineParser:
     def __init__(self, rise_parsing_errors=False, end_of_line=True) -> None:
         self._charsets = _BorderChars()
         self._input_row: list[InputCell] = []
-        self.__lines_in_cells = []  # how many lines are in every single cell
         self._set_rise_parsing_errors(rise_parsing_errors)
         self._set_end_of_line(end_of_line)
         self.set_cell_text_to_border()
@@ -190,6 +199,8 @@ class LineParser:
         self._cells_align = []
         self._cells_valign = []
         self._cells_width = []
+        self._lines_in_cells = []  # how many lines are in every single cell
+        self._max_cell_width = []  # stores the max line length in every cell
 
     def set_cell_aligns(self, cells_align: list[str]):
         """set cell align
@@ -207,7 +218,18 @@ class LineParser:
             TypeError: _description_
             ValueError: _description_
         """
-
+        knewn_aligns = (
+            "r",
+            "l",
+            "c",
+            "cl",
+            "cr",
+            "right",
+            "left",
+            "center",
+            "center_left",
+            "center_right",
+        )
         if isinstance(cells_align, str):
             cells_align = list(cells_align)
         if not isinstance(cells_align, list):
@@ -215,13 +237,13 @@ class LineParser:
                 f"align must be a list or string - align input: {cells_align}"
             )
         for value in cells_align:
-            if value not in ("r", "l", "c"):
+            if value not in knewn_aligns:
                 raise ValueError(
-                    f"all aligns must be 'r', 'l' or 'c' - align input: {value} - {cells_align}"
+                    f"all aligns must be in {knewn_aligns} - align input: {value} - {cells_align}"
                 )
         self._cells_align = cells_align
 
-    def set_cell_valign(self, cells_valign: list[str]):
+    def set_cell_valigns(self, cells_valign: list[str]):
         if isinstance(cells_valign, str):
             cells_valign = list(cells_valign)
         if not isinstance(cells_valign, list):
@@ -340,20 +362,18 @@ class LineParser:
         this attributes is on kwargs["your_attrubure"] on the output objects
         (not every output wrapper has this attribut!)
         """
-        if isinstance(input_cell, InputCell):
-            self.__lines_in_cells.append(input_cell.get_line_amount())
-            self._input_row.append(input_cell)
-        elif isinstance(input_cell, (str, int, float)):
-            cell_wrapper = InputCell(input_cell, *args, **kwargs)
-            self.__lines_in_cells.append(cell_wrapper.get_line_amount())
-            self._input_row.append(cell_wrapper)
-        else:
+        if not isinstance(input_cell, (str, int, float, InputCell)):
             raise Exception(
                 f"Input must me string or {InputCell}, input is {input_cell}"
             )
+        elif isinstance(input_cell, (str, int, float)):
+            input_cell = InputCell(input_cell, *args, **kwargs)
+        self._lines_in_cells.append(input_cell.get_line_amount())
+        self._max_cell_width.append(input_cell.get_max_width())
+        self._input_row.append(input_cell)
 
     def set_row(self, row: list[str] | list[InputCell]):
-        """add a new row and delete the old data"""
+        """add a new row and delete the old data (set_row beacause the old data are deleted)"""
         self.clear_raw_data()
         for cell in row:
             self._add_cell(cell)
@@ -395,11 +415,11 @@ class LineParser:
         self.__check_amount_of_cells()
         self.__parse_step_1_fill_up()
         # for evry line in the cells iterarte over all cells and try to get the line
-        for line_counter in range(max(self.__lines_in_cells)):
+        for line_counter in range(max(self._lines_in_cells)):
             yield self.__parse_line_with_text(line_counter, boarder_chars_name)
 
     def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputChunk]:
-        """_summary_
+        """get the parsed row
 
         Args:
             boarder_chars_name (str, optional): try any string.
@@ -414,24 +434,31 @@ class LineParser:
         return result
 
     def get_row(self, boarder_chars_name: str = None) -> str:
-        """_summary_
+        """get the parsed row
 
         Args:
-            boarder_chars_name (str, optional): border_1.
+            boarder_chars_name (str, optional): is the style of the left right cell border.
             Defaults to None. If None always the last name is used which was set
 
         Returns:
-            str: example:
+            str: parsed row
         """
 
         return "".join(
             [str(part) for part in self.get_row_adwanced(boarder_chars_name)]
         )
 
+    def get_cell_widhts(self) -> list[int]:
+        """method to calculate a cell width - column width - automaticly
+
+        (for that the complete table is needed)"""
+        return [x + self._cell_distance_text.sum for x in self._max_cell_width]
+
     def clear_raw_data(self):
         """delete the last raw input data (not parsed data)"""
         self._input_row = []
-        self.__lines_in_cells = []
+        self._lines_in_cells = []
+        self._max_cell_width = []
 
     # -----------------------------------------------------------------------------------------------------
     # Parser
@@ -460,7 +487,7 @@ class LineParser:
                     **_actual_cell.kwargs,
                 )
             )
-        elif align in ("c", "center"):
+        elif align in ("cr", "center_right"):
             center_left = (spaces_align + 1) // 2 * " "
             center_right = spaces_align // 2 * " "
             result.append(
@@ -471,6 +498,18 @@ class LineParser:
                     **_actual_cell.kwargs,
                 )
             )
+        elif align in ("c", "center", "cl", "center_left"):
+            center_left = spaces_align // 2 * " "
+            center_right = (spaces_align + 1) // 2 * " "
+            result.append(
+                OutputChunk(
+                    center_left + line_text + center_right,
+                    "text",
+                    *_actual_cell.args,
+                    **_actual_cell.kwargs,
+                )
+            )
+
         else:
             if self._rise_parsing_errors:
                 raise Exception("never happen")
@@ -527,7 +566,7 @@ class LineParser:
 
         for actual_cell, valign in zip(self._input_row, self._cells_valign):
             actual_cell.cell_text = actual_cell._cell_text_input.copy()
-            diff = max(self.__lines_in_cells) - actual_cell.get_line_amount()
+            diff = max(self._lines_in_cells) - actual_cell.get_line_amount()
             if valign == "t":
                 for i in range(diff):
                     actual_cell.cell_text.append("")
@@ -652,73 +691,150 @@ class LineParser:
             )
 
 
-class TextTable_Styles:
-    def __init__(self) -> None:
-        self.styles = {"style1": 22}
-        # 1. a partling line between rows
-        # 2  only parting between header and table
-        # ... ===== ===== =======
-        # ... A     B     A and B
-        # ... ===== ===== =======
-        # ... False False False
-        # ... True  False False
-        # ... False True  False
-        # ... True  True  True
-        # ... ===== ===== =======
-
-        # foo    bar    baz
-        # ====== ====== ======
-        # data 1 data 2 data 3
-        # data 4 data 5 data 6
-
-        # +########+########+########+
-        # |header 1|header 2|header 3|
-        # +========+========+========+
-        # |data 1  |  data 2| data 3 |
-        # +--------+--------+--------+
-        # |data 4  |  data 5| data 6 |
-        # +________+________+________+
-
-        #         '|header 1  |  header 2| header 3 |\n'
-        # ...     '+==========+==========+==========+\n'
-        # ...     '|data 1    |    data 2|  data 3  |\n'
-        # ...     '+----------+----------+----------+\n'
-        # ...     '|data 4    |    data 5|  data 6  |\n'
-        # ...     '+__________+__________+__________+\n'
-        pass
-
-
 class TextTable_Fast:
     def __init__(self) -> None:
         self._parser = LineParser()
+        self._header_rows = []
+        self._data_rows = []
 
-    ### override ###
-    def _create_complete_table(self) -> str:
-        # fmt:off
-        result = []
-        result += self._parser.get_border_top_bottom("utf_8_top_1")
-        result += self._parser.get_row("utf_8_border_1") #header
-        result += self._parser.get_border_top_bottom("utf_8_parting_1")
-        result += self._parser.get_border_top_bottom_advanced("utf_8_bottom_1")
-        # fmt:on
+        self._styles = {
+            "grid_utf_8": self._run_grid_utf_8,
+            "grid_ascii": self._run_grid_ascii,
+            "github": self._run_github_ascii,
+            "plain": self._run_plain_ascii,
+            "simple": self._run_simple_ascii,
+            "presto": self._run_presto_ascii,
+            "psql": self._run_psql_ascii,
+            "psql": self._run_psql_ascii,
+            "orgtbl": self._run_orgtbl_ascii,
+            "rst": self._run_rst_ascii,
+            "outline": self._run_outline_ascii,
+        }
+
+    def add_row_header(self, row: list[str]):
+        self._header_rows.append(row)
+
+    def add_row_data(self, row: list[str]):
+        self._data_rows.append(row)
+
+    def get_table(self, style="show") -> str:
+        if style not in self._styles.keys():
+            raise KeyError(f"'{style}' not in {self._styles.keys()}")
+        self._init_auto_settings()
+        return self._styles[style]()
+
+    def _init_auto_settings(self):
+        # iterate over the complete table to calculate column widhts
+        row_widths = []
+        for header_row in self._header_rows:
+            self._parser.set_row(header_row)
+            row_widths.append(self._parser.get_cell_widhts())
+        for data_row in self._data_rows:
+            self._parser.set_row(data_row)
+            row_widths.append(self._parser.get_cell_widhts())
+        # calculate column width
+        cell_width = [max(column_widths) for column_widths in zip(*row_widths)]
+        self._parser.set_cell_aligns("c" * len(cell_width))
+        self._parser.set_cell_valigns("m" * len(cell_width))
+        self._parser.set_cell_widths(cell_width)
+
+    # ------------ styles ---------------
+
+    def _run_1(self, top, header, data, end, border) -> str:
+        result = self._parser.get_border_top_bottom(top)
+        for header_row in self._header_rows:
+            self._parser.set_row(header_row)
+            result += self._parser.get_row(border)
+            result += self._parser.get_border_top_bottom(header)
+        for data_row in self._data_rows[:-1]:
+            self._parser.set_row(data_row)
+            result += self._parser.get_row(border)
+            result += self._parser.get_border_top_bottom(data)
+        self._parser.set_row(self._data_rows[-1])
+        result += self._parser.get_row(border)
+        result += self._parser.get_border_top_bottom(end)
         return result
 
-    def set_style(self, style: str):
-        pass
+    def _run_2(self, top, header, end, border) -> str:
+        result = self._parser.get_border_top_bottom(top)
+        for header_row in self._header_rows:
+            self._parser.set_row(header_row)
+            result += self._parser.get_row(border)
+            result += self._parser.get_border_top_bottom(header)
+        for data_row in self._data_rows:
+            self._parser.set_row(data_row)
+            result += self._parser.get_row(border)
+        result += self._parser.get_border_top_bottom(end)
+        return result
 
-    def add_table(self):
-        # a heder line is nochting else. if there have to another border line
-        # chose another style
-        pass
+    def _run_3(self, header, border) -> str:
+        result = ""
+        for header_row in self._header_rows:
+            self._parser.set_row(header_row)
+            result += self._parser.get_row(border)
+            result += self._parser.get_border_top_bottom(header)
+        for data_row in self._data_rows:
+            self._parser.set_row(data_row)
+            result += self._parser.get_row(border)
+        return result
 
-    def get_table(self):
-        pass
+    def _run_grid_utf_8(self) -> str:
+        return self._run_1(
+            "utf_8_top_1",
+            "utf_8_parting_1",
+            "utf_8_parting_2",
+            "utf_8_bottom_1",
+            "utf_8_border_1",
+        )
 
-    # first row i iterpreted as header, (bool)
-    # add the complete table (with header) in ine list
-    # and get back the string. only string
-    # u can use fixe styles ()
-    # auto align center, auto cell widt max (iterate over the table on setting)
+    def _run_grid_ascii(self) -> str:
+        return self._run_1(
+            "ascii_parting_1",
+            "ascii_parting_2",
+            "ascii_parting_1",
+            "ascii_parting_1",
+            "ascii_border_1",
+        )
+
+    def _run_github_ascii(self) -> str:
+        return self._run_3("ascii_parting_4", "ascii_border_1")
+
+    def _run_plain_ascii(self):
+        result = ""
+        for header_row in self._header_rows:
+            self._parser.set_row(header_row)
+            result += self._parser.get_row("ascii_border_3")
+        for data_row in self._data_rows:
+            self._parser.set_row(data_row)
+            result += self._parser.get_row("ascii_border_3")
+        return result
+
+    def _run_simple_ascii(self):
+        return self._run_3("ascii_parting_5", "ascii_border_3")
+
+    def _run_presto_ascii(self):
+        return self._run_3("ascii_parting_6", "ascii_border_2")
+
+    def _run_psql_ascii(self):
+        return self._run_2(
+            "ascii_parting_1",
+            "ascii_parting_7",
+            "ascii_parting_1",
+            "ascii_border_1",
+        )
+
+    def _run_orgtbl_ascii(self):
+        return self._run_3("ascii_parting_7", "ascii_border_1")
+
+    def _run_rst_ascii(self):
+        return self._run_2(
+            "ascii_parting_8", "ascii_parting_8", "ascii_parting_8", "ascii_border_4"
+        )
+
+    def _run_outline_ascii(self):
+        return self._run_2(
+            "ascii_parting_1", "ascii_parting_2", "ascii_parting_1", "ascii_border_1"
+        )
 
 
 class TextTableInTime:
@@ -728,7 +844,7 @@ class TextTableInTime:
     """
 
     def __init__(self) -> None:
-        self._main_header = []
+        # two parse are needed because Line Parser only can store
         self._parser_header = LineParser()
         self._parser_data = LineParser()
         self._actual_return = []
@@ -760,18 +876,6 @@ class TextTableInTime:
     def get_table_end(self):
         return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
 
-    def add_header_lines(self, header_lines: list[str]):
-        """add the lines of the header (not cells)"""
-        if not isinstance(header_lines, (list, str)):
-            raise Exception("must be str or list of string")
-        if isinstance(header_lines, str):
-            self._main_header.append(header_lines)
-        elif isinstance(header_lines, list):
-            for header_line in header_lines:
-                if not isinstance(header_line, str):
-                    raise Exception("header must be string")
-                self._main_header.append(header_line)
-
     def set_cell_width(self, cells_width: list[int]):
         self._parser_header.set_cell_widths(cells_width)
         self._parser_data.set_cell_widths(cells_width)
@@ -781,8 +885,8 @@ class TextTableInTime:
         self._parser_data.set_cols_distance_from_left(distances)
 
     def set_cell_valign(self, cells_valign: list[str]):
-        self._parser_header.set_cell_valign(cells_valign)
-        self._parser_data.set_cell_valign(cells_valign)
+        self._parser_header.set_cell_valigns(cells_valign)
+        self._parser_data.set_cell_valigns(cells_valign)
 
     def set_cell_align_header(self, cells_align: list[str]):
         self._parser_header.set_cell_aligns(cells_align)
@@ -818,7 +922,7 @@ class TextTableInTime:
                 return self._parser_data.get_border_top_bottom_advanced(name)
         return []
 
-    def get_complete(self) -> list[OutputChunk]:
+    def get_complete_table(self) -> list[OutputChunk]:
         result = []
         for header_row in self.__header_rows:
             self._parser_header.set_row(header_row)
@@ -832,9 +936,6 @@ class TextTableInTime:
     def clear_table(self):
         self.__data_rows = []
         self.__header_rows = []
-
-    def _create_table_header(self):
-        pass
 
 
 class Texttables:

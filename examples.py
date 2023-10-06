@@ -1,4 +1,10 @@
-from Texttables_2 import LineParser, TextTableInTime, Texttables, InputCell
+from Texttables_2 import (
+    LineParser,
+    TextTableInTime,
+    Texttables,
+    InputCell,
+    TextTable_Fast,
+)
 import tkinter
 import time
 from colorama import Fore, Back, Style
@@ -72,7 +78,7 @@ def example_parser_1():
     parser = LineParser()
     parser.set_cell_aligns("crc")
     parser.set_cell_widths([15, 20, 23])
-    parser.set_cell_valign("mtb")
+    parser.set_cell_valigns("mtb")
     parser.set_row(header)
     print(parser.get_border_top_bottom("utf_8_top_1"), end="")
     print(parser.get_row(), end="")
@@ -143,7 +149,7 @@ def example_texttable_1():
     texttable.set_special_horizontal_border([3, 4, 7])
     for row in data:
         texttable.add_row_data(row)
-    table = texttable.get_complete()
+    table = texttable.get_complete_table()
     for chunk in table:
         try:
             color = chunk.args[0]
@@ -154,42 +160,33 @@ def example_texttable_1():
         #     print(chunk.get_chunk(), end="")
 
 
-def example_texttables_1():
-    header = [
-        ("Header1\n756h", Fore.BLUE),
-        "Header2.0\nHeader2.1",
-        ("Header3", Fore.RED),
-        "header4",
-    ]
+def texttable_fast_1():
+    header = ["Example", "Header2.0", "Header3"]
     data = [
-        ["Franz1", 563, "Nothing", ("Joke", Fore.RED)],
-        ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", ("Ok", Fore.GREEN)],
-        ["Franz1", 563, "Nothing", ("Joke", Fore.BLUE)],
-        ["Johannes", "44", 55, "Rope"],
-        [("Volker", Fore.MAGENTA), 2.7, "idk", "servus"],
-        ["Franz1", 563, "Nothing", ("Joke",)],
-        ["Johannes", "44", 55, "Rope"],
-        ["Volker", 2.7, "idk", ("Ok", Fore.YELLOW)],
+        ["Hallo\nFranz1", 563, "Nothing"],
+        ["Johannes", "44", 55],
+        ["Volker", 2.7, "idk"],
     ]
-    texttables = Texttables()
-    texttables.set_cols_distance_from_left([19, 35, 49, 60])
-    texttables.set_cell_align_header("cclr")
-    texttables.set_cell_align_data("clrc")
-    texttables.add_row_header(header)
-    texttables.set_special_horizontal_border([3, 4, 7])
+    t = TextTable_Fast()
+    t.add_row_header(header)
     for row in data:
-        texttables.add_row_data(row)
-    table = texttables.get_complete()
-    for chunk in table:
-        try:
-            color = chunk.args[0]
-        except IndexError:
-            color = Fore.BLACK
-        print(color + str(chunk), end="")
+        t.add_row_data(row)
+    for key in [
+        "grid_utf_8",
+        "grid_ascii",
+        "github",
+        "plain",
+        "simple",
+        "presto",
+        "psql",
+        "orgtbl",
+        "rst",
+        "outline",
+    ]:
+        print(t.get_table(key), end="")
+        print("\n\n")
 
 
-example_parser_1()
-example_texttable_1()
-# print(Fore.GREEN + "hallo")
-# Example()
+# example_parser_1()
+# example_texttable_1()
+texttable_fast_1()
