@@ -1,5 +1,21 @@
 from typing import NamedTuple
-from Texttables_2 import OutputChunk
+from Texttables.Texttable import OutputChunk
+
+"""NOT IN USE
+
+    Raises:
+        ValueError: _description_
+        Exception: _description_
+        Exception: _description_
+        Exception: _description_
+        TypeError: _description_
+
+    Returns:
+        _type_: _description_
+
+    Yields:
+        _type_: _description_
+    """
 
 
 class _CellTextDistance(NamedTuple):

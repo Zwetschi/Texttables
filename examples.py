@@ -1,4 +1,4 @@
-from Texttables_2 import (
+from Texttable import (
     LineParser,
     TextTableInTime,
     InputCell,
@@ -10,12 +10,6 @@ from colorama import Fore, Back, Style
 import colorama
 
 colorama.init(autoreset=True)
-# colorama.init(autoreset=True)
-# p = print
-
-
-# def print(*args):
-#     p(*args, end="")
 
 
 class Example:
@@ -198,7 +192,7 @@ def example_texttable_1():
         print(color + str(chunk), end="")
 
     for row in data:
-        # time.sleep(2)  # simulat any code running behind
+        time.sleep(0.5)  # simulat any code running behind
         texttable.add_row_data(row)
         for chunk in texttable.get_row_data():
             try:
@@ -225,7 +219,8 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    print(t.get_table("presto"), end="")
+    table_string = t.get_table("presto")
+    print(table_string)
 
 
 example_parser_1()
