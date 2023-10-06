@@ -285,6 +285,8 @@ class LineParser:
         # when a table with 3 cells, and a table with 5 cells
         # and the right distacne from booath tables is 100
         # in the table with 3 cells are missing 2 chars because of the vertical boarders
+        if not isinstance(distances, list):
+            raise ValueError("must be a list")
         dist = distances.copy()
         dist.insert(0, 0)
         breite_real = [
@@ -374,6 +376,8 @@ class LineParser:
 
     def set_row(self, row: list[str] | list[InputCell]):
         """add a new row and delete the old data (set_row beacause the old data are deleted)"""
+        if not isinstance(row, list):
+            raise ValueError("row must be list")
         self.clear_raw_data()
         for cell in row:
             self._add_cell(cell)

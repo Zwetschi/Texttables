@@ -1,7 +1,6 @@
 from Texttables_2 import (
     LineParser,
     TextTableInTime,
-    Texttables,
     InputCell,
     TextTable_Fast,
 )
@@ -91,7 +90,7 @@ def example_parser_1():
 
 
 def example_parser_2():
-    header = [("Header1", "blue"), "Header2.0\nHeader2.1", "Header3"]
+    header = ["Header1", "Header2.0\nHeader2.1", "Header3"]
     data = [
         ["Franz1", 563, "Nothing", "Joke"],
         ["Johannes", "44", 55, "Rope"],
@@ -99,27 +98,71 @@ def example_parser_2():
     ]
     parser_header = LineParser()
     parser_header.set_cell_aligns("rrc")
+    parser_header.set_cell_valigns("mmm")
     parser_header.set_cols_distance_from_left([15, 30, 70])
     parser_header.set_cell_text_to_border("  ", "  ")
     parser_header.set_line_indent(5)
     parser_header.set_row(header)
 
-    print(parser_header.get_border_top_bottom("000"))
-    print(parser_header.get_row())
+    print(parser_header.get_border_top_bottom("000"), end="")
+    print(parser_header.get_row(), end="")
 
     parser_data = LineParser()
     parser_data.set_cell_aligns("clcr")
+    parser_data.set_cell_valigns("mmmm")
     parser_data.set_cols_distance_from_left([15, 30, 50, 70])
     parser_data.set_border_chars_top_bottom("162", "╞═╪═╪═╤═╡")
     parser_data.set_line_indent(5)
 
-    print(parser_data.get_border_top_bottom("162"))
+    print(parser_data.get_border_top_bottom("162"), end="")
     for row in data:
         parser_data.set_row(row)
-        print(parser_data.get_row())
+        print(parser_data.get_row(), end="")
 
         parser_data.clear_raw_data()
-    print(parser_data.get_border_top_bottom("111"))
+    print(parser_data.get_border_top_bottom("111"), end="")
+
+
+def example_parser_3():
+    p1 = LineParser()
+    p2 = LineParser(end_of_line=False)
+    p3 = LineParser()
+    p1.set_cols_distance_from_left([15, 30, 65])
+    p2.set_cols_distance_from_left([15])
+    p3.set_cols_distance_from_left([15, 33, 50])
+    p2.set_border_chars_top_bottom("top1", ["+", "-", "+", "+"])
+    p3.set_border_chars_top_bottom("top2", ["", "-", "+", "+"])
+    p3.set_border_chars_left_right("side1", ["", "|", "|"])
+    p1.set_cell_aligns("ccc")
+    p2.set_cell_aligns("c")
+    p3.set_cell_aligns("lrc")
+    p1.set_cell_valigns("ttt")
+    p2.set_cell_valigns("t")
+    p3.set_cell_valigns("ttt")
+
+    p1.set_row(["parser1", "parser1\nparser1", "parser1\np1"])
+    print(p1.get_border_top_bottom("666"), end="")
+    print(p1.get_row(), end="")
+
+    p2.set_row(["parser2\nrow\nheader\nparser2\n"])
+    x1 = (
+        [p2.get_border_top_bottom_advanced("top1")]
+        + [line for line in p2.get_line_by_line_advanced("111")]
+        + [p2.get_border_top_bottom_advanced("top1")]
+    )
+    p3.set_row(["parser3\ndata11", "parser3\ndata12", "parser3\ndata13"])
+    lines2_1 = [p3.get_border_top_bottom_advanced("top2")] + [
+        line for line in p3.get_line_by_line_advanced()
+    ]
+    p3.set_row(["parser3\ndata21", "parser3\ndata22", "parser3\ndata23"])
+    lines2_2 = (
+        [p3.get_border_top_bottom_advanced()]
+        + [line for line in p3.get_line_by_line_advanced()]
+        + [p3.get_border_top_bottom_advanced("top2")]
+    )
+    for a, b in zip(x1, lines2_1 + lines2_2):
+        for chunk in a + b:
+            print(chunk, end="")
 
 
 def example_texttable_1():
@@ -145,19 +188,30 @@ def example_texttable_1():
     texttable.set_cell_align_header("cclr")
     texttable.set_cell_align_data("clrc")
     texttable.set_cell_valign("bbbb")
-    texttable.add_row_header(header)
     texttable.set_special_horizontal_border([3, 4, 7])
-    for row in data:
-        texttable.add_row_data(row)
-    table = texttable.get_complete_table()
-    for chunk in table:
+    texttable.add_row_header(header)
+    for chunk in texttable.get_row_header():
         try:
             color = chunk.args[0]
         except IndexError:
             color = Fore.BLACK
         print(color + str(chunk), end="")
-        # else:
-        #     print(chunk.get_chunk(), end="")
+
+    for row in data:
+        # time.sleep(2)  # simulat any code running behind
+        texttable.add_row_data(row)
+        for chunk in texttable.get_row_data():
+            try:
+                color = chunk.args[0]
+            except IndexError:
+                color = Fore.BLACK
+            print(color + str(chunk), end="")
+    for chunk in texttable.get_table_end():
+        try:
+            color = chunk.args[0]
+        except IndexError:
+            color = Fore.BLACK
+        print(color + str(chunk), end="")
 
 
 def texttable_fast_1():
@@ -171,22 +225,11 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    for key in [
-        "grid_utf_8",
-        "grid_ascii",
-        "github",
-        "plain",
-        "simple",
-        "presto",
-        "psql",
-        "orgtbl",
-        "rst",
-        "outline",
-    ]:
-        print(t.get_table(key), end="")
-        print("\n\n")
+    print(t.get_table("presto"), end="")
 
 
-# example_parser_1()
-# example_texttable_1()
+example_parser_1()
+example_parser_2()
+example_parser_3()
+example_texttable_1()
 texttable_fast_1()
