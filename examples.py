@@ -1,4 +1,4 @@
-from Texttables_2 import LineParser, TextTable, Texttables, InputCell
+from Texttables_2 import LineParser, TextTableInTime, Texttables, InputCell
 import tkinter
 import time
 from colorama import Fore, Back, Style
@@ -134,7 +134,7 @@ def example_texttable_1():
         ["Johannes", "44", 55, "Rope"],
         ["Volker", 2.7, "idk", InputCell("Ok", Fore.YELLOW)],
     ]
-    texttable = TextTable()
+    texttable = TextTableInTime()
     texttable.set_cols_distance_from_left([19, 35, 49, 60])
     texttable.set_cell_align_header("cclr")
     texttable.set_cell_align_data("clrc")

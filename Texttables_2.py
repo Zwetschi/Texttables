@@ -654,6 +654,7 @@ class LineParser:
 
 class TextTable_Styles:
     def __init__(self) -> None:
+        self.styles = {"style1": 22}
         # 1. a partling line between rows
         # 2  only parting between header and table
         # ... ===== ===== =======
@@ -689,6 +690,28 @@ class TextTable_Styles:
 
 class TextTable_Fast:
     def __init__(self) -> None:
+        self._parser = LineParser()
+
+    ### override ###
+    def _create_complete_table(self) -> str:
+        # fmt:off
+        result = []
+        result += self._parser.get_border_top_bottom("utf_8_top_1")
+        result += self._parser.get_row("utf_8_border_1") #header
+        result += self._parser.get_border_top_bottom("utf_8_parting_1")
+        result += self._parser.get_border_top_bottom_advanced("utf_8_bottom_1")
+        # fmt:on
+        return result
+
+    def set_style(self, style: str):
+        pass
+
+    def add_table(self):
+        # a heder line is nochting else. if there have to another border line
+        # chose another style
+        pass
+
+    def get_table(self):
         pass
 
     # first row i iterpreted as header, (bool)
@@ -698,16 +721,44 @@ class TextTable_Fast:
     # auto align center, auto cell widt max (iterate over the table on setting)
 
 
-class TextTable:
+class TextTableInTime:
+    """class to get line by just in time to show data in a gui during testing process
+
+    class stores the added data to have the ability to add all the data fist and get the whole table, too
+    """
+
     def __init__(self) -> None:
         self._main_header = []
         self._parser_header = LineParser()
         self._parser_data = LineParser()
         self._actual_return = []
+        # to check if special horizontal line is needed
         self.__row_counter = 0
         self.__header_rows = []
         self.__data_rows = []
         self._special_horizontal_borders = []
+
+    ### override ###
+    def get_row_header(self):
+        # fmt:off
+        result= self._parser_header.get_border_top_bottom_advanced("utf_8_top_1")
+        result += self._parser_header.get_row_adwanced("utf_8_border_1")
+        result += self._parser_header.get_border_top_bottom_advanced("utf_8_parting_1")
+        # fmt:on
+        return result
+
+    ### override ###
+    def get_row_data(self):
+        # fmt:off
+        result =self._get_special_horizontal_line("utf_8_parting_2")
+        result += self._parser_data.get_row_adwanced("utf_8_border_1")
+        self.__row_counter +=1
+        # fmt:on
+        return result
+
+    ### override ###
+    def get_table_end(self):
+        return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
 
     def add_header_lines(self, header_lines: list[str]):
         """add the lines of the header (not cells)"""
@@ -750,22 +801,6 @@ class TextTable:
         self._parser_data.set_row(row)
         self.__data_rows.append(row)
 
-    def get_row_header(self):
-        # fmt:off
-        result= self._parser_header.get_border_top_bottom_advanced("utf_8_top_1")
-        result += self._parser_header.get_row_adwanced("utf_8_border_1")
-        result += self._parser_header.get_border_top_bottom_advanced("utf_8_parting_1")
-        # fmt:on
-        return result
-
-    def get_row_data(self):
-        # fmt:off
-        result =self._get_special_horizontal_line("utf_8_parting_2")
-        result += self._parser_data.get_row_adwanced("utf_8_border_1")
-        self.__row_counter +=1
-        # fmt:on
-        return result
-
     def _get_special_horizontal_line(self, name: str) -> list[OutputChunk]:
         """create a special vertical line after rows
 
@@ -782,9 +817,6 @@ class TextTable:
             if self.__row_counter in self._special_horizontal_borders:
                 return self._parser_data.get_border_top_bottom_advanced(name)
         return []
-
-    def get_table_end(self):
-        return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
 
     def get_complete(self) -> list[OutputChunk]:
         result = []
@@ -806,9 +838,10 @@ class TextTable:
 
 
 class Texttables:
+    # more tables then one. for side mode
     def __init__(self) -> None:
         super().__init__()
-        self._texttable = list[TextTable] = []
+        self._texttable = list[TextTableInTime] = []
 
     def add_row_header(self, row, table: int = 0):
         pass
