@@ -689,7 +689,7 @@ class LineParser:
             )
 
 
-class TextTable_Fast:
+class TextTableFast:
     def __init__(self) -> None:
         self._parser = LineParser()
         self._header_rows = []
@@ -839,6 +839,8 @@ class TextTableInTime:
     """class to get line by just in time to show data in a gui during testing process
 
     class stores the added data to have the ability to add all the data fist and get the whole table, too
+
+    not the complete table is needed to parse
     """
 
     def __init__(self) -> None:
@@ -867,6 +869,7 @@ class TextTableInTime:
             result += self._parser_table_main_header.get_row_chunks("header")
         return result
 
+    ### override ###
     def get_row_header(self) -> list[OutputChunk]:
         # fmt:off
         result= self._parser_header.get_border_top_bottom_chunks("utf_8_top_1")
@@ -944,10 +947,6 @@ class TextTableInTime:
             result += self.get_row_data()
         result += self.get_table_end()
         return result
-
-    def clear_table(self):
-        self.__data_rows = []
-        self.__header_rows = []
 
 
 class Texttables:

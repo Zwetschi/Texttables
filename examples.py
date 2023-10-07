@@ -2,7 +2,7 @@ from Texttable import (
     LineParser,
     TextTableInTime,
     InputCell,
-    TextTable_Fast,
+    TextTableFast,
 )
 import tkinter
 import time
@@ -10,51 +10,6 @@ from colorama import Fore, Back, Style
 import colorama
 
 colorama.init(autoreset=True)
-
-
-class Example:
-    def __init__(self) -> None:
-        self.root = tkinter.Tk()
-        scollbar = tkinter.Scrollbar(self.root, orient="horizontal")
-        self.textwidget = tkinter.Text(
-            self.root, xscrollcommand=scollbar.set, wrap="none"
-        )
-        self.textwidget.config(width=200, height=40)
-        scollbar.config(command=self.textwidget.xview)
-        self.textwidget.grid(sticky="nswe")
-        scollbar.grid(sticky="nesw")
-        self.textwidget.tag_config("black", foreground="black")
-        self.textwidget.tag_config("blue", foreground="blue")
-        self.textwidget.tag_config("red", foreground="red")
-
-        tkinter.Button(self.root, text="CreateTexttale", command=self.table).grid()
-        self.root.mainloop()
-
-    def table(self):
-        data = [
-            (1, "blue"),
-            ("ghgh", "red"),
-            ("ztzt", "blue"),
-            (87, "red"),
-        ]
-        p1 = LineParser()
-        p1.set_cell_aligns("clrr")
-        p1.set_cell_widths([20, 20, 10, 30])
-        p1.set_row(data)
-        result = p1.get_row_chunks()
-        for part in result:
-            try:
-                color = part.args
-            except KeyError:
-                color = "black"
-            self.textwidget.insert("end", part, color)
-            # if part.get_token() == "frame":
-            #     self.textwidget.insert("end", part, "blue")
-            # else:
-            # try:
-
-            # except AttributeError:
-            #     self.textwidget.insert("end", part, "green")
 
 
 def example_parser_1():
@@ -159,6 +114,20 @@ def example_parser_3():
             print(chunk, end="")
 
 
+def example_parser_4():
+    header = ["Header1", "Header2.0\nHeader2.1", "Header3"]
+    data = [
+        ["Franz1", 563, "Nothing"],
+        ["Johannes", 55, "Rope"],
+        ["Volker", 2.7, "Ok"],
+    ]
+    parser_left = LineParser(end_of_line=False)
+    parser_right = LineParser()
+    parser_left.set_cell_aligns("rrr")
+    parser_left.set_cell_valigns("ttt")
+    parser_left.set_cols_distance_from_left([20, 40, 60])
+
+
 def example_texttable_1():
     header = [
         InputCell("Header1\n756h", Fore.BLUE),
@@ -205,7 +174,7 @@ def example_texttable_1():
         print(color + str(chunk), end="")
 
     for row in data:
-        time.sleep(0.1)  # simulat any code running behind
+        time.sleep(0.5)  # simulat any code running behind
         texttable.add_row_data(row)
         for chunk in texttable.get_row_data():
             try:
@@ -228,7 +197,7 @@ def texttable_fast_1():
         ["Johannes", "44", 55],
         ["Volker", 2.7, "idk"],
     ]
-    t = TextTable_Fast()
+    t = TextTableFast()
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
