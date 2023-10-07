@@ -382,7 +382,7 @@ class LineParser:
         for cell in row:
             self._add_cell(cell)
 
-    def get_border_top_bottom_advanced(
+    def get_border_top_bottom_chunks(
         self, boarder_chars_name: str = None
     ) -> list[OutputChunk]:
         """_summary_
@@ -412,7 +412,7 @@ class LineParser:
             [str(part) for part in self.__parse_line_without_text(boarder_chars_name)]
         )
 
-    def get_line_by_line_advanced(
+    def get_line_by_line_chunks(
         self, boarder_chars_name: str = None
     ) -> list[OutputChunk]:
         # implementet to have the option parse tables on right in future
@@ -422,7 +422,7 @@ class LineParser:
         for line_counter in range(max(self._lines_in_cells)):
             yield self.__parse_line_with_text(line_counter, boarder_chars_name)
 
-    def get_row_adwanced(self, boarder_chars_name: str = None) -> list[OutputChunk]:
+    def get_row_chunks(self, boarder_chars_name: str = None) -> list[OutputChunk]:
         """get the parsed row
 
         Args:
@@ -433,7 +433,7 @@ class LineParser:
             list[OutputPart]: _description_
         """
         result = []
-        for line in self.get_line_by_line_advanced(boarder_chars_name):
+        for line in self.get_line_by_line_chunks(boarder_chars_name):
             result += line
         return result
 
@@ -448,9 +448,7 @@ class LineParser:
             str: parsed row
         """
 
-        return "".join(
-            [str(part) for part in self.get_row_adwanced(boarder_chars_name)]
-        )
+        return "".join([str(part) for part in self.get_row_chunks(boarder_chars_name)])
 
     def get_cell_widhts(self) -> list[int]:
         """method to calculate a cell width - column width - automaticly
@@ -862,33 +860,33 @@ class TextTableInTime:
         self._special_horizontal_borders = []
 
     ### override ###
-    def get_header_lines(self):
+    def get_header_lines(self) -> list[OutputChunk]:
         result = []
         for line in self._header_lines:
             self._parser_table_main_header.set_row([line])
-            result += self._parser_table_main_header.get_row_adwanced("header")
+            result += self._parser_table_main_header.get_row_chunks("header")
         return result
 
-    def get_row_header(self):
+    def get_row_header(self) -> list[OutputChunk]:
         # fmt:off
-        result= self._parser_header.get_border_top_bottom_advanced("utf_8_top_1")
-        result += self._parser_header.get_row_adwanced("utf_8_border_1")
-        result += self._parser_header.get_border_top_bottom_advanced("utf_8_parting_1")
+        result= self._parser_header.get_border_top_bottom_chunks("utf_8_top_1")
+        result += self._parser_header.get_row_chunks("utf_8_border_1")
+        result += self._parser_header.get_border_top_bottom_chunks("utf_8_parting_1")
         # fmt:on
         return result
 
     ### override ###
-    def get_row_data(self):
+    def get_row_data(self) -> list[OutputChunk]:
         # fmt:off
         result =self._get_special_horizontal_line("utf_8_parting_2")
-        result += self._parser_data.get_row_adwanced("utf_8_border_1")
+        result += self._parser_data.get_row_chunks("utf_8_border_1")
         self.__row_counter +=1
         # fmt:on
         return result
 
     ### override ###
-    def get_table_end(self):
-        return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
+    def get_table_end(self) -> list[OutputChunk]:
+        return self._parser_data.get_border_top_bottom_chunks("utf_8_bottom_1")
 
     def add_header(self, lines: list[str]):
         self._header_lines = lines
@@ -930,10 +928,10 @@ class TextTableInTime:
                 self.__row_counter % self._special_horizontal_borders == 0
                 and self.__row_counter != 0
             ):
-                return self._parser_data.get_border_top_bottom_advanced(name)
+                return self._parser_data.get_border_top_bottom_chunks(name)
         elif isinstance(self._special_horizontal_borders, list):
             if self.__row_counter in self._special_horizontal_borders:
-                return self._parser_data.get_border_top_bottom_advanced(name)
+                return self._parser_data.get_border_top_bottom_chunks(name)
         return []
 
     def get_complete_table(self) -> list[OutputChunk]:

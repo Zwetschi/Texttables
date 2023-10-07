@@ -41,7 +41,7 @@ class Example:
         p1.set_cell_aligns("clrr")
         p1.set_cell_widths([20, 20, 10, 30])
         p1.set_row(data)
-        result = p1.get_row_adwanced()
+        result = p1.get_row_chunks()
         for part in result:
             try:
                 color = part.args
@@ -140,19 +140,19 @@ def example_parser_3():
 
     p2.set_row(["parser2\nrow\nheader\nparser2\n"])
     x1 = (
-        [p2.get_border_top_bottom_advanced("top1")]
-        + [line for line in p2.get_line_by_line_advanced("111")]
-        + [p2.get_border_top_bottom_advanced("top1")]
+        [p2.get_border_top_bottom_chunks("top1")]
+        + [line for line in p2.get_line_by_line_chunks("111")]
+        + [p2.get_border_top_bottom_chunks("top1")]
     )
     p3.set_row(["parser3\ndata11", "parser3\ndata12", "parser3\ndata13"])
-    lines2_1 = [p3.get_border_top_bottom_advanced("top2")] + [
-        line for line in p3.get_line_by_line_advanced()
+    lines2_1 = [p3.get_border_top_bottom_chunks("top2")] + [
+        line for line in p3.get_line_by_line_chunks()
     ]
     p3.set_row(["parser3\ndata21", "parser3\ndata22", "parser3\ndata23"])
     lines2_2 = (
-        [p3.get_border_top_bottom_advanced()]
-        + [line for line in p3.get_line_by_line_advanced()]
-        + [p3.get_border_top_bottom_advanced("top2")]
+        [p3.get_border_top_bottom_chunks()]
+        + [line for line in p3.get_line_by_line_chunks()]
+        + [p3.get_border_top_bottom_chunks("top2")]
     )
     for a, b in zip(x1, lines2_1 + lines2_2):
         for chunk in a + b:
