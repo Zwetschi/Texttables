@@ -300,18 +300,18 @@ class LineParser:
         ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧
         ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═
         ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯╰ ╴ ╵ ╶ ╷ ╸"""
-        chars = self.__check_border_chars(name, chars, check_len=3)
-        if chars:
-            self._charsets.set_boarder_left_right(name, chars)
+        if isinstance(chars, str):
+            chars = list(chars)
+        self._charsets.set_boarder_left_right(name, chars)
 
     def set_border_chars_top_bottom(self, name: str, chars: list[str]):
         """─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼ ═ ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙ ╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬
         ─ ━ │ ┃ ┄ ┅ ┆ ┇ ┈ ┉  ┊┋ ┌ ┍ ┎ ┏ ┐ ┑ ┒ ┓ └ ┕ ┖ ┗ ┘ ┙ ┚ ┛ ├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ┤ ┥ ┦ ┧
         ┨ ┩ ┪ ┫ ┬ ┭ ┮ ┯ ┰ ┱ ┲ ┳ ┴ ┵ ┶ ┷ ┸ ┹ ┺ ┻ ┼ ┽ ┾ ┿ ╀ ╁ ╂ ╃ ╄ ╅ ╆ ╇ ╈ ╉ ╊ ╋ ╌ ╍╎ ╏ ═
         ║ ╒ ╓ ╔ ╕ ╖ ╗ ╘ ╙╚ ╛ ╜ ╝ ╞ ╟ ╠ ╡ ╢ ╣ ╤ ╥ ╦ ╧ ╨ ╩ ╪ ╫ ╬ ╭ ╮ ╯╰ ╴ ╵ ╶ ╷ ╸"""
-        chars = self.__check_border_chars(name, chars, check_len=4)
-        if chars:
-            self._charsets.set_boarder_top_bottom(name, chars)
+        if isinstance(chars, str):
+            chars = list(chars)
+        self._charsets.set_boarder_top_bottom(name, chars)
 
     def set_cell_text_to_border(self, left: str = " ", right: str = " "):
         """set the distance to the frame on the text in echt cell\n
@@ -415,7 +415,7 @@ class LineParser:
     def get_line_by_line_advanced(
         self, boarder_chars_name: str = None
     ) -> list[OutputChunk]:
-        # implementet to have the option parse tables on left in future
+        # implementet to have the option parse tables on right in future
         self.__check_amount_of_cells()
         self.__parse_step_1_fill_up()
         # for evry line in the cells iterarte over all cells and try to get the line
@@ -537,6 +537,7 @@ class LineParser:
         # │               fgtZZZZff           │                ggg │                      hhh             │
         # left distance space text distance middle        ....       middle distance space text distance right
         border_chars = self._charsets.get_boarder_left_right(boarder_chars_name)
+        self.__check_border_chars(border_chars, 3)
         if len(self._cells_width) == 0:
             raise Exception("pls set cell with before parsing rows!")
         if len(border_chars) == 3:
@@ -592,6 +593,7 @@ class LineParser:
         left   between     middle   between     middle   between    right"""
 
         chars = self._charsets.get_boarder_top_bottom(boarder_chars_name).copy()
+        self.__check_border_chars(chars, 4)
         if len(self._cells_width) == 0:
             raise Exception("pls set cell with before parsing rows!")
         if len(chars) == 4:
@@ -628,9 +630,7 @@ class LineParser:
                 raise ValueError(error_message)
             print(f"WARNING: {error_message}")
 
-    def __check_border_chars(
-        self, name: str, chars: list[str], check_len: int
-    ) -> list[str]:
+    def __check_border_chars(self, chars: list[str], check_len: int) -> list[str]:
         """only check if the chars input make sense"""
 
         def sensible_lengt_hoizontal_line(amount_of_cells):
@@ -654,15 +654,12 @@ class LineParser:
             if check_len == 4
             else sensible_lengt_text_line
         )
-        if name is None and chars is None:
-            return False
-        if isinstance(chars, str):
-            chars = list(chars)
-        if len(self._cells_width) == 0:
-            raise AttributeError(
-                "Before set the border chars, set the cell widhts by calling "
-                + f"'{self.set_cell_widths.__name__}' or '{self.set_border_chars_left_right.__name__}'"
-            )
+
+        # if len(self._cells_width) == 0:
+        #     raise AttributeError(
+        #         "Before set the border chars, set the cell widhts by calling "
+        #         + f"'{self.set_cell_widths.__name__}' or '{self.set_border_chars_left_right.__name__}'"
+        #     )
         if len(chars) != check_len and len(chars) != func(len(self._cells_width)):
             raise TypeError(
                 f"The legth of of boarder chars must be {check_len} by standart\n"
@@ -670,7 +667,6 @@ class LineParser:
                 + "In a special case there can be chosen a boarder char for every single place in cell.\n"
                 + f"The table len is {len(self._cells_width)} cells, so there have to be {func(len(self._cells_width))} boarder chars, but there are {len(chars)}"
             )
-        return chars
 
     def __check_amount_of_cells(self):
         """check if the len of data and the amount of cells is the same
@@ -848,17 +844,31 @@ class TextTableInTime:
     """
 
     def __init__(self) -> None:
-        # two parse are needed because Line Parser only can store
+        # parser for header line
+        self._parser_table_main_header = LineParser()
+        self._parser_table_main_header.set_border_chars_left_right(
+            "header", [" ", " ", " "]
+        )
+        self._parser_table_main_header.set_cell_aligns("l")
+        self._parser_table_main_header.set_cell_valigns("t")
+        # two parse are needed because Line Parser only can store one row
         self._parser_header = LineParser()
         self._parser_data = LineParser()
         self._actual_return = []
-        # to check if special horizontal line is needed
-        self.__row_counter = 0
         self.__header_rows = []
         self.__data_rows = []
+        # to check if special horizontal line is needed
+        self.__row_counter = 0
         self._special_horizontal_borders = []
 
     ### override ###
+    def get_header_lines(self):
+        result = []
+        for line in self._header_lines:
+            self._parser_table_main_header.set_row([line])
+            result += self._parser_table_main_header.get_row_adwanced("header")
+        return result
+
     def get_row_header(self):
         # fmt:off
         result= self._parser_header.get_border_top_bottom_advanced("utf_8_top_1")
@@ -880,13 +890,13 @@ class TextTableInTime:
     def get_table_end(self):
         return self._parser_data.get_border_top_bottom_advanced("utf_8_bottom_1")
 
-    def set_cell_width(self, cells_width: list[int]):
-        self._parser_header.set_cell_widths(cells_width)
-        self._parser_data.set_cell_widths(cells_width)
+    def add_header(self, lines: list[str]):
+        self._header_lines = lines
 
     def set_cols_distance_from_left(self, distances: list[int]):
         self._parser_header.set_cols_distance_from_left(distances)
         self._parser_data.set_cols_distance_from_left(distances)
+        self._parser_table_main_header.set_cols_distance_from_left([distances[-1]])
 
     def set_cell_valign(self, cells_valign: list[str]):
         self._parser_header.set_cell_valigns(cells_valign)

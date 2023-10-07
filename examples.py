@@ -178,12 +178,25 @@ def example_texttable_1():
         ["Volker", 2.7, "idk", InputCell("Ok", Fore.YELLOW)],
     ]
     texttable = TextTableInTime()
+    texttable.add_header(
+        [
+            "Hi, this is the table header. \nAnd this is the second table header line",
+            InputCell("Add a third red header line", Fore.RED),
+        ],
+    )
     texttable.set_cols_distance_from_left([19, 35, 49, 60])
     texttable.set_cell_align_header("cclr")
     texttable.set_cell_align_data("clrc")
     texttable.set_cell_valign("bbbb")
     texttable.set_special_horizontal_border([3, 4, 7])
     texttable.add_row_header(header)
+    for chunk in texttable.get_header_lines():
+        try:
+            color = chunk.args[0]
+        except IndexError:
+            color = Fore.BLACK
+        print(color + str(chunk), end="")
+
     for chunk in texttable.get_row_header():
         try:
             color = chunk.args[0]
@@ -192,7 +205,7 @@ def example_texttable_1():
         print(color + str(chunk), end="")
 
     for row in data:
-        time.sleep(0.5)  # simulat any code running behind
+        time.sleep(0.1)  # simulat any code running behind
         texttable.add_row_data(row)
         for chunk in texttable.get_row_data():
             try:
