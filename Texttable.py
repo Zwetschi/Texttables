@@ -699,7 +699,6 @@ class TextTableFast:
             "grid_utf_8": self._run_grid_utf_8,
             "grid_ascii": self._run_grid_ascii,
             "github": self._run_github_ascii,
-            "plain": self._run_plain_ascii,
             "simple": self._run_simple_ascii,
             "presto": self._run_presto_ascii,
             "psql": self._run_psql_ascii,
@@ -738,100 +737,130 @@ class TextTableFast:
 
     # ------------ styles ---------------
 
-    def _run_1(self, top, header, data, end, border) -> str:
-        result = self._parser.get_border_top_bottom(top)
+    def _run_1(self, top, header, data, end, border) -> list[list[OutputChunk]]:
+        result: list[list[OutputChunk]] = []
+        result.append(self._parser.get_border_top_bottom_chunks(top))
         for header_row in self._header_rows:
             self._parser.set_row(header_row)
-            result += self._parser.get_row(border)
-            result += self._parser.get_border_top_bottom(header)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
+            result.append(self._parser.get_border_top_bottom_chunks(header))
         for data_row in self._data_rows[:-1]:
             self._parser.set_row(data_row)
-            result += self._parser.get_row(border)
-            result += self._parser.get_border_top_bottom(data)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
+            result.append(self._parser.get_border_top_bottom_chunks(data))
         self._parser.set_row(self._data_rows[-1])
-        result += self._parser.get_row(border)
-        result += self._parser.get_border_top_bottom(end)
+        for line in self._parser.get_line_by_line_chunks(border):
+            result.append(line)
+        result.append(self._parser.get_border_top_bottom_chunks(end))
         return result
 
-    def _run_2(self, top, header, end, border) -> str:
-        result = self._parser.get_border_top_bottom(top)
+    def _run_2(self, top, header, end, border) -> list[list[OutputChunk]]:
+        result: list[list[OutputChunk]] = []
+        result.append(self._parser.get_border_top_bottom_chunks(top))
         for header_row in self._header_rows:
             self._parser.set_row(header_row)
-            result += self._parser.get_row(border)
-            result += self._parser.get_border_top_bottom(header)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
+            result.append(self._parser.get_border_top_bottom_chunks(header))
         for data_row in self._data_rows:
             self._parser.set_row(data_row)
-            result += self._parser.get_row(border)
-        result += self._parser.get_border_top_bottom(end)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
+        result.append(self._parser.get_border_top_bottom_chunks(end))
         return result
 
-    def _run_3(self, header, border) -> str:
-        result = ""
+    def _run_3(self, header, border) -> list[list[OutputChunk]]:
+        result: list[list[OutputChunk]] = []
         for header_row in self._header_rows:
             self._parser.set_row(header_row)
-            result += self._parser.get_row(border)
-            result += self._parser.get_border_top_bottom(header)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
+            result.append(self._parser.get_border_top_bottom_chunks(header))
         for data_row in self._data_rows:
             self._parser.set_row(data_row)
-            result += self._parser.get_row(border)
+            for line in self._parser.get_line_by_line_chunks(border):
+                result.append(line)
         return result
+
+    def _run_output_chunks_to_str(self, result: list[list[OutputChunk]]) -> str:
+        result_str = ""
+        for line in result:
+            for chunk in line:
+                result_str += str(chunk)
+        return result_str
 
     def _run_grid_utf_8(self) -> str:
-        return self._run_1(
-            "utf_8_top_1",
-            "utf_8_parting_1",
-            "utf_8_parting_2",
-            "utf_8_bottom_1",
-            "utf_8_border_1",
+        return self._run_output_chunks_to_str(
+            self._run_1(
+                "utf_8_top_1",
+                "utf_8_parting_1",
+                "utf_8_parting_2",
+                "utf_8_bottom_1",
+                "utf_8_border_1",
+            )
         )
 
     def _run_grid_ascii(self) -> str:
-        return self._run_1(
-            "ascii_parting_1",
-            "ascii_parting_2",
-            "ascii_parting_1",
-            "ascii_parting_1",
-            "ascii_border_1",
+        return self._run_output_chunks_to_str(
+            self._run_1(
+                "ascii_parting_1",
+                "ascii_parting_2",
+                "ascii_parting_1",
+                "ascii_parting_1",
+                "ascii_border_1",
+            )
         )
 
     def _run_github_ascii(self) -> str:
-        return self._run_3("ascii_parting_4", "ascii_border_1")
-
-    def _run_plain_ascii(self):
-        result = ""
-        for header_row in self._header_rows:
-            self._parser.set_row(header_row)
-            result += self._parser.get_row("ascii_border_3")
-        for data_row in self._data_rows:
-            self._parser.set_row(data_row)
-            result += self._parser.get_row("ascii_border_3")
-        return result
+        return self._run_output_chunks_to_str(
+            self._run_3("ascii_parting_4", "ascii_border_1")
+        )
 
     def _run_simple_ascii(self):
-        return self._run_3("ascii_parting_5", "ascii_border_3")
+        return self._run_output_chunks_to_str(
+            self._run_3("ascii_parting_5", "ascii_border_3")
+        )
 
     def _run_presto_ascii(self):
-        return self._run_3("ascii_parting_6", "ascii_border_2")
+        return self._run_output_chunks_to_str(
+            self._run_3("ascii_parting_6", "ascii_border_2")
+        )
 
     def _run_psql_ascii(self):
-        return self._run_2(
-            "ascii_parting_1",
-            "ascii_parting_7",
-            "ascii_parting_1",
-            "ascii_border_1",
+        return self._run_output_chunks_to_str(
+            self._run_2(
+                "ascii_parting_1",
+                "ascii_parting_7",
+                "ascii_parting_1",
+                "ascii_border_1",
+            )
         )
 
     def _run_orgtbl_ascii(self):
-        return self._run_3("ascii_parting_7", "ascii_border_1")
+        return self._run_output_chunks_to_str(
+            self._run_3("ascii_parting_7", "ascii_border_1")
+        )
 
     def _run_rst_ascii(self):
-        return self._run_2(
-            "ascii_parting_8", "ascii_parting_8", "ascii_parting_8", "ascii_border_4"
+        return self._run_output_chunks_to_str(
+            self._run_2(
+                "ascii_parting_8",
+                "ascii_parting_8",
+                "ascii_parting_8",
+                "ascii_border_4",
+            )
         )
 
     def _run_outline_ascii(self):
-        return self._run_2(
-            "ascii_parting_1", "ascii_parting_2", "ascii_parting_1", "ascii_border_1"
+        return self._run_output_chunks_to_str(
+            self._run_2(
+                "ascii_parting_1",
+                "ascii_parting_2",
+                "ascii_parting_1",
+                "ascii_border_1",
+            )
         )
 
 

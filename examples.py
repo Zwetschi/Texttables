@@ -201,12 +201,12 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    table_string = t.get_table("presto")
+    table_string = t.get_table("simple")
     print(table_string)
 
 
-example_parser_1()
-example_parser_2()
-example_parser_3()
-example_texttable_1()
+# example_parser_1()
+# example_parser_2()
+# example_parser_3()
+# example_texttable_1()
 texttable_fast_1()
