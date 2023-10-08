@@ -690,22 +690,22 @@ class LineParser:
 
 
 class TextTableFast:
-    def __init__(self) -> None:
-        self._parser = LineParser()
+    def __init__(self, endline=True) -> None:
+        self._parser = LineParser(end_of_line=endline)
         self._header_rows = []
         self._data_rows = []
 
         self._styles = {
-            "grid_utf_8": self._run_grid_utf_8,
-            "grid_ascii": self._run_grid_ascii,
-            "github": self._run_github_ascii,
-            "simple": self._run_simple_ascii,
-            "presto": self._run_presto_ascii,
-            "psql": self._run_psql_ascii,
-            "psql": self._run_psql_ascii,
-            "orgtbl": self._run_orgtbl_ascii,
-            "rst": self._run_rst_ascii,
-            "outline": self._run_outline_ascii,
+            "grid_utf_8": self._style_grid_utf_8,
+            "grid_ascii": self._style_grid_ascii,
+            "github": self._style_github_ascii,
+            "simple": self._style_simple_ascii,
+            "presto": self._style_presto_ascii,
+            "psql": self._style_psql_ascii,
+            "psql": self._style_psql_ascii,
+            "orgtbl": self._style_orgtbl_ascii,
+            "rst": self._style_rst_ascii,
+            "outline": self._style_outline_ascii,
         }
 
     def add_row_header(self, row: list[str]):
@@ -715,10 +715,13 @@ class TextTableFast:
         self._data_rows.append(row)
 
     def get_table(self, style="show") -> str:
+        return self._run_output_chunks_to_str(self._get_table_line_chunks(style))
+
+    def _get_table_line_chunks(self, style: str = "show") -> list[list[OutputChunk]]:
         if style not in self._styles.keys():
             raise KeyError(f"'{style}' not in {self._styles.keys()}")
         self._init_auto_settings()
-        return self._styles[style]()
+        return self._run_output_chunks_to_str(self._styles[style]())
 
     def _init_auto_settings(self):
         # iterate over the complete table to calculate column widhts
@@ -735,9 +738,15 @@ class TextTableFast:
         self._parser.set_cell_valigns("m" * len(cell_width))
         self._parser.set_cell_widths(cell_width)
 
-    # ------------ styles ---------------
+    def _run_output_chunks_to_str(self, result: list[list[OutputChunk]]) -> str:
+        result_str = ""
+        for line in result:
+            for chunk in line:
+                result_str += str(chunk)
+        return result_str
 
-    def _run_1(self, top, header, data, end, border) -> list[list[OutputChunk]]:
+    # ------------ table creators  ---------------
+    def _create_1(self, top, header, data, end, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
         result.append(self._parser.get_border_top_bottom_chunks(top))
         for header_row in self._header_rows:
@@ -756,7 +765,7 @@ class TextTableFast:
         result.append(self._parser.get_border_top_bottom_chunks(end))
         return result
 
-    def _run_2(self, top, header, end, border) -> list[list[OutputChunk]]:
+    def _create_2(self, top, header, end, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
         result.append(self._parser.get_border_top_bottom_chunks(top))
         for header_row in self._header_rows:
@@ -771,7 +780,7 @@ class TextTableFast:
         result.append(self._parser.get_border_top_bottom_chunks(end))
         return result
 
-    def _run_3(self, header, border) -> list[list[OutputChunk]]:
+    def _create_3(self, header, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
         for header_row in self._header_rows:
             self._parser.set_row(header_row)
@@ -784,84 +793,71 @@ class TextTableFast:
                 result.append(line)
         return result
 
-    def _run_output_chunks_to_str(self, result: list[list[OutputChunk]]) -> str:
-        result_str = ""
-        for line in result:
-            for chunk in line:
-                result_str += str(chunk)
-        return result_str
-
-    def _run_grid_utf_8(self) -> str:
-        return self._run_output_chunks_to_str(
-            self._run_1(
-                "utf_8_top_1",
-                "utf_8_parting_1",
-                "utf_8_parting_2",
-                "utf_8_bottom_1",
-                "utf_8_border_1",
-            )
+    # ------------ styles ---------------
+    def _style_grid_utf_8(self) -> list[list[OutputChunk]]:
+        return self._create_1(
+            "utf_8_top_1",
+            "utf_8_parting_1",
+            "utf_8_parting_2",
+            "utf_8_bottom_1",
+            "utf_8_border_1",
         )
 
-    def _run_grid_ascii(self) -> str:
-        return self._run_output_chunks_to_str(
-            self._run_1(
-                "ascii_parting_1",
-                "ascii_parting_2",
-                "ascii_parting_1",
-                "ascii_parting_1",
-                "ascii_border_1",
-            )
+    def _style_grid_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_1(
+            "ascii_parting_1",
+            "ascii_parting_2",
+            "ascii_parting_1",
+            "ascii_parting_1",
+            "ascii_border_1",
         )
 
-    def _run_github_ascii(self) -> str:
-        return self._run_output_chunks_to_str(
-            self._run_3("ascii_parting_4", "ascii_border_1")
+    def _style_github_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_3("ascii_parting_4", "ascii_border_1")
+
+    def _style_simple_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_3("ascii_parting_5", "ascii_border_3")
+
+    def _style_presto_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_3("ascii_parting_6", "ascii_border_2")
+
+    def _style_psql_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_2(
+            "ascii_parting_1",
+            "ascii_parting_7",
+            "ascii_parting_1",
+            "ascii_border_1",
         )
 
-    def _run_simple_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_3("ascii_parting_5", "ascii_border_3")
+    def _style_orgtbl_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_3("ascii_parting_7", "ascii_border_1")
+
+    def _style_rst_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_2(
+            "ascii_parting_8",
+            "ascii_parting_8",
+            "ascii_parting_8",
+            "ascii_border_4",
         )
 
-    def _run_presto_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_3("ascii_parting_6", "ascii_border_2")
+    def _style_outline_ascii(self) -> list[list[OutputChunk]]:
+        return self._create_2(
+            "ascii_parting_1",
+            "ascii_parting_2",
+            "ascii_parting_1",
+            "ascii_border_1",
         )
 
-    def _run_psql_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_2(
-                "ascii_parting_1",
-                "ascii_parting_7",
-                "ascii_parting_1",
-                "ascii_border_1",
-            )
-        )
 
-    def _run_orgtbl_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_3("ascii_parting_7", "ascii_border_1")
-        )
+class Texttables:
+    def __init__(self) -> None:
+        self.texttables: list[TextTableFast] = []
 
-    def _run_rst_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_2(
-                "ascii_parting_8",
-                "ascii_parting_8",
-                "ascii_parting_8",
-                "ascii_border_4",
-            )
-        )
+    def add_texttable(self, text_table: TextTableFast):
+        self.texttables.append(text_table)
 
-    def _run_outline_ascii(self):
-        return self._run_output_chunks_to_str(
-            self._run_2(
-                "ascii_parting_1",
-                "ascii_parting_2",
-                "ascii_parting_1",
-                "ascii_border_1",
-            )
-        )
+    def get_tables(self):
+        pass
 
 
 class TextTableInTime:
@@ -881,6 +877,7 @@ class TextTableInTime:
         self._parser_table_main_header.set_cell_aligns("l")
         self._parser_table_main_header.set_cell_valigns("t")
         # two parse are needed because Line Parser only can store one row
+        # and to be prepared to set different cell distances
         self._parser_header = LineParser()
         self._parser_data = LineParser()
         self._actual_return = []
@@ -923,24 +920,6 @@ class TextTableInTime:
     def add_header(self, lines: list[str]):
         self._header_lines = lines
 
-    def set_cols_distance_from_left(self, distances: list[int]):
-        self._parser_header.set_cols_distance_from_left(distances)
-        self._parser_data.set_cols_distance_from_left(distances)
-        self._parser_table_main_header.set_cols_distance_from_left([distances[-1]])
-
-    def set_cell_valign(self, cells_valign: list[str]):
-        self._parser_header.set_cell_valigns(cells_valign)
-        self._parser_data.set_cell_valigns(cells_valign)
-
-    def set_cell_align_header(self, cells_align: list[str]):
-        self._parser_header.set_cell_aligns(cells_align)
-
-    def set_cell_align_data(self, cells_align: list[str]):
-        self._parser_data.set_cell_aligns(cells_align)
-
-    def set_special_horizontal_border(self, borders: int | list[int]):
-        self._special_horizontal_borders = borders
-
     def add_row_header(self, row: list[str]):
         self._parser_header.set_row(row)
         self.__header_rows.append(row)
@@ -948,6 +927,17 @@ class TextTableInTime:
     def add_row_data(self, row: list[str]):
         self._parser_data.set_row(row)
         self.__data_rows.append(row)
+
+    def get_complete_table(self) -> list[OutputChunk]:
+        result = []
+        for header_row in self.__header_rows:
+            self._parser_header.set_row(header_row)
+            result += self.get_row_header()
+        for data_row in self.__data_rows:
+            self._parser_data.set_row(data_row)
+            result += self.get_row_data()
+        result += self.get_table_end()
+        return result
 
     def _get_special_horizontal_line(self, name: str) -> list[OutputChunk]:
         """create a special vertical line after rows
@@ -966,13 +956,20 @@ class TextTableInTime:
                 return self._parser_data.get_border_top_bottom_chunks(name)
         return []
 
-    def get_complete_table(self) -> list[OutputChunk]:
-        result = []
-        for header_row in self.__header_rows:
-            self._parser_header.set_row(header_row)
-            result += self.get_row_header()
-        for data_row in self.__data_rows:
-            self._parser_data.set_row(data_row)
-            result += self.get_row_data()
-        result += self.get_table_end()
-        return result
+    def set_cols_distance_from_left(self, distances: list[int]):
+        self._parser_header.set_cols_distance_from_left(distances)
+        self._parser_data.set_cols_distance_from_left(distances)
+        self._parser_table_main_header.set_cols_distance_from_left([distances[-1]])
+
+    def set_cell_valign(self, cells_valign: list[str]):
+        self._parser_header.set_cell_valigns(cells_valign)
+        self._parser_data.set_cell_valigns(cells_valign)
+
+    def set_cell_align_header(self, cells_align: list[str]):
+        self._parser_header.set_cell_aligns(cells_align)
+
+    def set_cell_align_data(self, cells_align: list[str]):
+        self._parser_data.set_cell_aligns(cells_align)
+
+    def set_special_horizontal_border(self, borders: int | list[int]):
+        self._special_horizontal_borders = borders

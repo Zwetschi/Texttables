@@ -201,7 +201,7 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    table_string = t.get_table("simple")
+    table_string = t.get_table("grid_ascii")
     print(table_string)
 
 
