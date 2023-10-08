@@ -947,24 +947,3 @@ class TextTableInTime:
             result += self.get_row_data()
         result += self.get_table_end()
         return result
-
-
-class Texttables:
-    # more tables then one. for side mode
-    def __init__(self) -> None:
-        super().__init__()
-        self._texttable = list[TextTableInTime] = []
-
-    def add_row_header(self, row, table: int = 0):
-        pass
-
-    def get_complete(self) -> list[OutputChunk]:
-        result = []
-        for header_row in self.__header_rows:
-            self._parser_header.set_row(header_row)
-            result += self.get_row_header()
-        for data_row in self.__data_rows:
-            self._parser_data.set_row(data_row)
-            result += self.get_row_data()
-        result += self.get_table_end()
-        return result
