@@ -11,34 +11,38 @@ class TextTableChunks:
         )
         self._parser_table_main_header.set_cell_aligns("l")
         self._parser_table_main_header.set_cell_valigns("t")
-        self._parser_header = LineParser(end_of_line=endline)
+        self._parser_header_row = LineParser(end_of_line=endline)
         self._parser_data = LineParser(end_of_line=endline)
-        self.__header_cell = []
-        self._header_rows = []
-        self._data_rows = []
+
+        self._parsed_header_cell: list[list[OutputChunk]] = []
+        self._parsed_header_lines: list[list[OutputChunk]] = []
+        self._actual_parsed_header_lines: list[list[OutputChunk]] = []
+        self._parsed_data_lines: list[list[OutputChunk]] = []
+        self._actual_parsed_data_lines: list[list[OutputChunk]] = []
         # to check if special horizontal line is needed
         self.__row_counter = 0
         self._special_horizontal_borders = []
         self.set_table_style("grid_utf_8")
 
         self._styles = {
-            "grid_utf_8": self._style_grid_utf_8,
-            "grid_ascii": self._style_grid_ascii,
-            "github": self._style_github_ascii,
-            "simple": self._style_simple_ascii,
-            "presto": self._style_presto_ascii,
-            "psql": self._style_psql_ascii,
-            "psql": self._style_psql_ascii,
-            "orgtbl": self._style_orgtbl_ascii,
-            "rst": self._style_rst_ascii,
-            "outline": self._style_outline_ascii,
+            "grid_utf_8": {
+                "top": "utf_8_top_1",
+                "header": "utf_8_parting_1",
+                "data": "utf_8_parting_2",
+                "end": "utf_8_bottom_1",
+                "special": "utf_8_bottom_1",
+                "border": "utf_8_border_1",
+            },
+            # "grid_ascii": self._style_grid_ascii,
+            # "github": self._style_github_ascii,
+            # "simple": self._style_simple_ascii,
+            # "presto": self._style_presto_ascii,
+            # "psql": self._style_psql_ascii,
+            # "psql": self._style_psql_ascii,
+            # "orgtbl": self._style_orgtbl_ascii,
+            # "rst": self._style_rst_ascii,
+            # "outline": self._style_outline_ascii,
         }
-
-    def add_row_header(self, row: list[str]):
-        self._header_rows.append(row)
-
-    def add_row_data(self, row: list[str]):
-        self._data_rows.append(row)
 
     def set_table_style(self, style: str = "show"):
         if style not in self._styles.keys():
@@ -49,17 +53,17 @@ class TextTableChunks:
     def _create_1(self, top, header, data, end, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
         result.append(self._parser.get_border_top_bottom_chunks(top))
-        for header_row in self._header_rows:
+        for header_row in self._parsed_header_lines:
             self._parser.set_row(header_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
             result.append(self._parser.get_border_top_bottom_chunks(header))
-        for data_row in self._data_rows[:-1]:
+        for data_row in self._parsed_data_lines[:-1]:
             self._parser.set_row(data_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
             result.append(self._parser.get_border_top_bottom_chunks(data))
-        self._parser.set_row(self._data_rows[-1])
+        self._parser.set_row(self._parsed_data_lines[-1])
         for line in self._parser.get_line_by_line_chunks(border):
             result.append(line)
         result.append(self._parser.get_border_top_bottom_chunks(end))
@@ -68,12 +72,12 @@ class TextTableChunks:
     def _create_2(self, top, header, end, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
         result.append(self._parser.get_border_top_bottom_chunks(top))
-        for header_row in self._header_rows:
+        for header_row in self._parsed_header_lines:
             self._parser.set_row(header_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
             result.append(self._parser.get_border_top_bottom_chunks(header))
-        for data_row in self._data_rows:
+        for data_row in self._parsed_data_lines:
             self._parser.set_row(data_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
@@ -82,18 +86,19 @@ class TextTableChunks:
 
     def _create_3(self, header, border) -> list[list[OutputChunk]]:
         result: list[list[OutputChunk]] = []
-        for header_row in self._header_rows:
+        for header_row in self._parsed_header_lines:
             self._parser.set_row(header_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
             result.append(self._parser.get_border_top_bottom_chunks(header))
-        for data_row in self._data_rows:
+        for data_row in self._parsed_data_lines:
             self._parser.set_row(data_row)
             for line in self._parser.get_line_by_line_chunks(border):
                 result.append(line)
         return result
 
     # ------------ styles ---------------
+    # das geht so nicht mehr
     def _style_grid_utf_8(self) -> list[list[OutputChunk]]:
         return self._create_1(
             "utf_8_top_1",
@@ -148,6 +153,9 @@ class TextTableChunks:
             "ascii_border_1",
         )
 
+    def end_table(self):
+        pass  # marker for end of table
+
     ###################################################################################################
     ### override ###
     def _create_header_lines_1(self) -> Iterator[list[OutputChunk]]:
@@ -160,11 +168,18 @@ class TextTableChunks:
 
     ### override ###
     def _create_row_header(self) -> Iterator[list[OutputChunk]]:
+        """create the row header depending on style
+
+        Yields:
+            Iterator[list[OutputChunk]]: _description_
+        """
         # fmt:off
-        yield self._parser_header.get_border_top_bottom_chunks("utf_8_top_1")
-        for line in self._parser_header.get_line_by_line_chunks("utf_8_border_1"):
+        if "top" in self._styles[self._style].keys():
+            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["top"])
+        for line in self._parser_header_row.get_line_by_line_chunks(self._styles[self._style]["border"]):
             yield line
-        yield self._parser_header.get_border_top_bottom_chunks("utf_8_parting_1")
+        if "header" in self._styles[self._style].keys():
+            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["header"])
         # fmt:on
 
     ### override ###
@@ -183,16 +198,16 @@ class TextTableChunks:
         self._header_lines = lines
 
     def set_cols_distance_from_left(self, distances: list[int]):
-        self._parser_header.set_cols_distance_from_left(distances)
+        self._parser_header_row.set_cols_distance_from_left(distances)
         self._parser_data.set_cols_distance_from_left(distances)
         self._parser_table_main_header.set_cols_distance_from_left([distances[-1]])
 
     def set_cell_valign(self, cells_valign: list[str]):
-        self._parser_header.set_cell_valigns(cells_valign)
+        self._parser_header_row.set_cell_valigns(cells_valign)
         self._parser_data.set_cell_valigns(cells_valign)
 
     def set_cell_align_header(self, cells_align: list[str]):
-        self._parser_header.set_cell_aligns(cells_align)
+        self._parser_header_row.set_cell_aligns(cells_align)
 
     def set_cell_align_data(self, cells_align: list[str]):
         self._parser_data.set_cell_aligns(cells_align)
@@ -201,12 +216,18 @@ class TextTableChunks:
         self._special_horizontal_borders = borders
 
     def add_row_header(self, row: list[str]):
-        self._parser_header.set_row(row)
-        self._header_rows.append(row)
+        self._actual_parsed_header_lines = []
+        self._parser_header_row.set_row(row)
+        for line in self._create_row_header():
+            self._parsed_header_lines.append(line)
+            self._actual_parsed_header_lines.append(line)
 
     def add_row_data(self, row: list[str]):
+        self._actual_parsed_data_lines = []
         self._parser_data.set_row(row)
-        self._data_rows.append(row)
+        for line in self._create_row_data():
+            self._parsed_data_lines.append(line)
+            self._actual_parsed_data_lines = []
 
     def _get_special_horizontal_line(self, name: str) -> list[OutputChunk]:
         """create a special vertical line after rows
@@ -226,12 +247,4 @@ class TextTableChunks:
         return []
 
     def get_complete_table(self) -> list[OutputChunk]:
-        result = []
-        for header_row in self._header_rows:
-            self._parser_header.set_row(header_row)
-            result += self._create_row_header()
-        for data_row in self._data_rows:
-            self._parser_data.set_row(data_row)
-            result += self._create_row_data()
-        result += self._create_table_end()
-        return result
+        return
