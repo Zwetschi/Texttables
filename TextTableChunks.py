@@ -119,12 +119,12 @@ class TextTableChunks:
 
     def _create_table_end(self) -> Iterator[list[OutputChunk]]:
         if "end" in self._styles[self._style].keys():
-            yield self._parser_data.get_border_top_bottom_chunks(
+            return self._parser_data.get_border_top_bottom_chunks(
                 self._styles[self._style]["end"]
             )
 
     def end_table(self):
-        pass  # marker for end of table
+        self._end_table = True
 
     def add_header(self, lines: list[str]):
         self._header_lines = lines
@@ -178,7 +178,9 @@ class TextTableChunks:
                 return self._parser_data.get_border_top_bottom_chunks(name)
         return []
 
-    def get_actual_parsed_lines(self) -> list[list[OutputChunk]]:
+    def get_actual_parsed_lines(self, end=False) -> list[list[OutputChunk]]:
+        if end:
+            return self._actual_parsed_lines.append(self._create_table_end())
         return self._actual_parsed_lines
 
     def test(self):
