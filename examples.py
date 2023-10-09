@@ -201,8 +201,19 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    table_string = t.get_table("grid_ascii")
-    print(table_string)
+    for s in [
+        "grid_utf_8",
+        "grid_ascii",
+        "github",
+        "simple",
+        "presto",
+        "psql",
+        "orgtbl",
+        "rst",
+        "outline",
+    ]:
+        table_string = t.get_table(s)
+        print(table_string)
 
 
 # example_parser_1()
