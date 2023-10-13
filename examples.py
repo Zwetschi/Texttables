@@ -216,8 +216,8 @@ def texttable_fast_1():
         print(table_string)
 
 
-# example_parser_1()
-# example_parser_2()
-# example_parser_3()
-# example_texttable_1()
+example_parser_1()
+example_parser_2()
+example_parser_3()
+example_texttable_1()
 texttable_fast_1()

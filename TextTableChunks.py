@@ -82,53 +82,6 @@ class TextTableChunks:
             raise KeyError(f"'{style}' not in {self._styles.keys()}")
         self._style = style
 
-    # ------------ table creators  ---------------
-    def _create_header_lines(self) -> Iterator[list[OutputChunk]]:
-        # fmt:off
-        for line in self._header_lines:
-            self._parser_table_main_header.set_row([line])
-            for line in self._parser_table_main_header.get_line_by_line_chunks("header"):
-                yield line
-        # fmt:on
-
-    def _create_row_header(self) -> Iterator[list[OutputChunk]]:
-        """create the row header depending on style
-
-        Yields:
-            Iterator[list[OutputChunk]]: _description_
-        """
-        # fmt:off
-        if "top" in self._styles[self._style].keys():
-            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["top"])
-        for line in self._parser_header_row.get_line_by_line_chunks(self._styles[self._style]["border"]):
-            yield line
-        if "header" in self._styles[self._style].keys():
-            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["header"])
-        # fmt:on
-
-    def _create_row_data(self) -> Iterator[list[OutputChunk]]:
-        # fmt:off
-        if "data" in self._styles[self._style].keys():
-            yield self._get_special_horizontal_line(self._styles[self._style]["data"])
-        for line in self._parser_data.get_line_by_line_chunks(self._styles[self._style]["border"]):
-            yield line
-        if "special" in self._styles[self._style].keys():
-            yield self._get_special_horizontal_line()
-        self.__row_counter +=1
-        # fmt:on
-
-    def _create_table_end(self) -> Iterator[list[OutputChunk]]:
-        if "end" in self._styles[self._style].keys():
-            return self._parser_data.get_border_top_bottom_chunks(
-                self._styles[self._style]["end"]
-            )
-
-    def end_table(self):
-        self._end_table = True
-
-    def add_header(self, lines: list[str]):
-        self._header_lines = lines
-
     def set_cols_distance_from_left(self, distances: list[int]):
         self._parser_header_row.set_cols_distance_from_left(distances)
         self._parser_data.set_cols_distance_from_left(distances)
@@ -161,7 +114,20 @@ class TextTableChunks:
             self._parsed_table.append(line)
             self._actual_parsed_lines.append(line)
 
-    def _get_special_horizontal_line(self, name: str) -> list[OutputChunk]:
+    def end_table(self):
+        self._actual_parsed_lines = self._create_table_end()
+
+    def add_header(self, lines: list[str]):
+        self._header_lines = lines
+
+    def get_actual_parsed_lines(self) -> list[list[OutputChunk]]:
+        return self._actual_parsed_lines
+
+    def get_complete_table(self) -> list[OutputChunk]:
+        return
+
+    # ------------ table creators  ---------------
+    def _create_special_horizontal_line(self, name: str) -> list[OutputChunk]:
         """create a special vertical line after rows
 
         check if the special line is needed"""
@@ -178,22 +144,46 @@ class TextTableChunks:
                 return self._parser_data.get_border_top_bottom_chunks(name)
         return []
 
-    def get_actual_parsed_lines(self, end=False) -> list[list[OutputChunk]]:
-        if end:
-            return self._actual_parsed_lines.append(self._create_table_end())
-        return self._actual_parsed_lines
+    def _create_header_lines(self) -> Iterator[list[OutputChunk]]:
+        # fmt:off
+        for line in self._header_lines:
+            self._parser_table_main_header.set_row([line])
+            for line in self._parser_table_main_header.get_line_by_line_chunks("header"):
+                yield line
+        # fmt:on
 
-    def test(self):
-        # for line in self._actual_parsed_lines:
-        #     for chunk in line:
-        #         print(chunk, end="")
-        print("complett:")
-        for line in self._parsed_table:
-            for chunk in line:
-                print(chunk, end="")
+    def _create_row_header(self) -> Iterator[list[OutputChunk]]:
+        """create the row header depending on style
 
-    def get_complete_table(self) -> list[OutputChunk]:
-        return
+        Yields:
+            Iterator[list[OutputChunk]]: _description_
+        """
+        # fmt:off
+        if "top" in self._styles[self._style].keys():
+            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["top"])
+        for line in self._parser_header_row.get_line_by_line_chunks(self._styles[self._style]["border"]):
+            yield line
+        if "header" in self._styles[self._style].keys():
+            yield self._parser_header_row.get_border_top_bottom_chunks(self._styles[self._style]["header"])
+        # fmt:on
+
+    def _create_row_data(self) -> Iterator[list[OutputChunk]]:
+        # fmt:off
+        for line in self._parser_data.get_line_by_line_chunks(self._styles[self._style]["border"]):
+            yield line
+        if "special" in self._styles[self._style].keys():
+            yield self._create_special_horizontal_line(self._styles[self._style]["special"])
+        if "data" in self._styles[self._style].keys():
+            yield self._parser_data.get_border_top_bottom_chunks(self._styles[self._style]["data"])
+        self.__row_counter +=1
+        # fmt:on
+
+    def _create_table_end(self) -> list[OutputChunk]:
+        # fmt:off
+        if "end" in self._styles[self._style].keys():
+            return self._parser_data.get_border_top_bottom_chunks(self._styles[self._style]["end"])
+        return []
+        # fmt:on
 
 
 data = [
@@ -208,8 +198,19 @@ d.set_cell_valign("ttt")
 d.set_cols_distance_from_left([20, 40, 60])
 d.set_table_style("grid_utf_8")
 d.add_row_header(["eins", "zwei", "dreu"])
+lines = d.get_actual_parsed_lines()
+for line in lines:
+    for chunk in line:
+        print(chunk, end="")
 for row in data:
     d.add_row_data(row)
-d.end_table()
+    lines = d.get_actual_parsed_lines()
+    for line in lines:
+        for chunk in line:
+            print(chunk, end="")
+# d.end_table()
+# lines = d.get_actual_parsed_lines()
+# for chunk in line:
+#     print(chunk, end="")
 
-d.test()
+# d.test()
