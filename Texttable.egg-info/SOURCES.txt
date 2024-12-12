@@ -1,0 +1,11 @@
+setup.py
+Texttable.egg-info/PKG-INFO
+Texttable.egg-info/SOURCES.txt
+Texttable.egg-info/dependency_links.txt
+Texttable.egg-info/top_level.txt
+Texttables/CellParser.py
+Texttables/TextTableChunks.py
+Texttables/Texttable.py
+Texttables/__init__.py
+Texttables/examples.py
+Texttables/output.py
