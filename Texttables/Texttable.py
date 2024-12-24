@@ -706,6 +706,7 @@ class TextTableFast:
             "orgtbl": self._style_orgtbl_ascii,
             "rst": self._style_rst_ascii,
             "outline": self._style_outline_ascii,
+            "utf8_std": self._utf8_std,
         }
 
     def add_row_header(self, row: list[str]):
@@ -794,6 +795,15 @@ class TextTableFast:
         return result
 
     # ------------ styles ---------------
+    def _utf8_std(self) -> list[list[OutputChunk]]:
+        return self._create_1(
+            "utf_8_top_1",
+            "utf_8_parting_1",
+            "utf_8_parting_2",
+            "utf_8_bottom_1",
+            "utf_8_border_1",
+        )
+
     def _style_grid_utf_8(self) -> list[list[OutputChunk]]:
         return self._create_1(
             "utf_8_top_1",

@@ -201,7 +201,7 @@ def texttable_fast_1():
     t.add_row_header(header)
     for row in data:
         t.add_row_data(row)
-    for s in [
+    for predef_style in [
         "grid_utf_8",
         "grid_ascii",
         "github",
@@ -212,12 +212,28 @@ def texttable_fast_1():
         "rst",
         "outline",
     ]:
-        table_string = t.get_table(s)
+        table_string = t.get_table(predef_style)
         print(table_string)
 
 
-example_parser_1()
-example_parser_2()
-example_parser_3()
+def texttable_fast_2():
+    header = ["Example", "Header2.0", "Header3"]
+    data = [
+        ["Hallo\nFranz1", 563, "Nothing"],
+        ["Johannes", "44", 55],
+        ["Volker", 2.7, "idk"],
+    ]
+    t = TextTableFast()
+    t.add_row_header(header)
+    for row in data:
+        t.add_row_data(row)
+    table_string = t.get_table("utf8_std")
+    print(table_string)
+
+
+# example_parser_1()
+# example_parser_2()
+# example_parser_3()
 # example_texttable_1()
 # texttable_fast_1()
+texttable_fast_2()
